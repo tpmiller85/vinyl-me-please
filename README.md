@@ -2,7 +2,6 @@
 
 [![](images/vinyl_logo.jpg)](https://www.vinylmeplease.com)
 
-
 ## Table of Contents  
 * [Overview & Goals](##overview)<BR>
 * [Data Pipeline](##data_pipeline)<BR>
@@ -19,12 +18,6 @@
   * [Linear Model With And Without Log Transformed Target](##models)
   * [Interpreting Coefficients](##coeffs)
   * [Conclusions & Future Work](##concl)
-
-Business Analytics
-
-
-* [Conclusion and Future Project Ideas](##conclusion_future)<BR>
-
 
 <a name="#overview"></a>
 
@@ -187,8 +180,8 @@ jacket_style  | Direct-To-Board
 ```
 
 I built Python classes to perform my PostgreSQL queries via psycopg2 and then clean and process the resuls. Because of the choice of my features, I was able to binary-encode most of them. Some examples of data cleaning techniques that were used:
-* Filled Null values, generally with 0 (`not feature`), depending on the feature.
-* Set `custom_color` to 1 where color was anything other than `black` or `None`.
+* Filled Null values, generally with `0` (`not feature`), depending on the feature.
+* Set `custom_color` to `1` where color was anything other than `black` or `None`.
 * Concatenated text in `jacket_type` and `jacket_style` columns and creating binary `tip-on` and `gatefold` columns based on presence of keywords, while accounting for different spellings (e.g. `tip-on`, `Tip on`, `Tip-on`, `Tip-On`).
 
 <a name="#model_df"></a>
@@ -209,15 +202,15 @@ From [Wikipedia](https://en.wikipedia.org/wiki/Variance_inflation_factor): *The 
 
 | VIF Factor | feature_name | Description
 | --- | --- | --- |
-| 1.1 | `exclusive` | Is this release exclusive to *Vinyl Me, Please*? |
-| 1.2 | `download_code` | Is there a digital download code included with this record? |
-| 1.4 | `lp_count` | How many vinyl records are included in this release? |
-| 1.3 | `weight` | Is this a heavier-weight pressing (180g or 200g)? |
-| 1.7 | `numbered` | Is this a numbered/limited-run release? |
-| 1.3 | `tip_on` | Is this a Tip-On jacket, where the cover print is done on a separate sheet of text-stock paper, and then wrapped/glued to a thick corrugated core? | 
-| 1.1 | `gatefold` | Is this a gatefold sleeve, which opens like a book? |
-| 2.2 | `custom_color` | Is the vinyl record any color other than black? |
-| 1.5 | `recent_release` | Was the original release year 2015 or newer? |
+| `1.1` | `exclusive` | Is this release exclusive to *Vinyl Me, Please*? |
+| `1.2` | `download_code` | Is there a digital download code included with this record? |
+| `1.4` | `lp_count` | How many vinyl records are included in this release? |
+| `1.3` | `weight` | Is this a heavier-weight pressing (180g or 200g)? |
+| `1.7` | `numbered` | Is this a numbered/limited-run release? |
+| `1.3` | `tip_on` | Is this a Tip-On jacket, where the cover print is done on a separate sheet of text-stock paper, and then wrapped/glued to a thick corrugated core? | 
+| `1.1` | `gatefold` | Is this a gatefold sleeve, which opens like a book? |
+| `2.2` | `custom_color` | Is the vinyl record any color other than black? |
+| `1.5` | `recent_release` | Was the original release year 2015 or newer? |
 
 The VIF analysis showed no collinearity between predictors (no values > 5), so all predictors can be retained.
 
@@ -243,12 +236,12 @@ The table below shows the coefficients for the linear model with the log-transfo
 
 | Attribute | Coefficient (log-transformed) | Attribute corellated to increase in sales # by a factor of: |
 | --- | --- | --- |
-| `tip_on` | 2.97 | 19.5 x |
-| `numbered` | 1.16 | 3.2 x |
-| `custom_color` | 1.09 | 3.0 x |
-| `gatefold` | 1.00 | 2.7 x |
-| `lp_count` | -0.11 | 0.90 x |
-| `recent_release` | -0.60 | 0.55 x |
+| `tip_on` | `2.97` | **19.5 x** |
+| `numbered` | `1.16` | **3.2 x** |
+| `custom_color` | `1.09` | **3.0 x** |
+| `gatefold` | `1.00` | **2.7 x** |
+| `lp_count` | `-0.11` | **0.90 x** |
+| `recent_release` | `-0.60` | **0.55 x** |
 
 <a name="#concl"></a>
 
