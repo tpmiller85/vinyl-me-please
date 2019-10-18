@@ -94,12 +94,12 @@ class AlbumSales(object):
 
         # Binary encode misc. columns
         df_record_sales['download_code'] = df_record_sales['download_code']\
-                                         .apply(lambda x: 1 if x is True else 0)
+                                         .apply(lambda x: 1 if x == True else 0)
         df_record_sales['exclusive'] = df_record_sales['exclusive']\
-                                         .apply(lambda x: 1 if x is True else 0)
+                                         .apply(lambda x: 1 if x == True else 0)
         df_record_sales['lp_count'].fillna(1, inplace=True)
         df_record_sales['numbered'] = np.where(df_record_sales['numbered']
-                                                is True, 1, 0)
+                                                == True, 1, 0)
 
         # Dropping columns that are no longer needed
         self.df_records_drop = df_record_sales.drop(columns=['color',

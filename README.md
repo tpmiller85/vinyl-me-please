@@ -100,7 +100,7 @@ The y-axis is on a log scale, since most releases have relatively low sales numb
 A significant amount of effort went into exploring all of the tables within the database, and mapping out which tables would need to be joined together in order to provide interesting insights related to album sales. For example, here is one entry from the 'releases' table:
 
 ```SQL
-SELECT * FROM releases WHERE product_id = 829;
+-- Example record from 'releases' table:
 -[ RECORD 1 ]-------------+---------------------------------------
 id                        | 519
 artist_id                 | 261
@@ -143,6 +143,7 @@ custom_feature_d          | Exclusive Gorillaz sticker pack with record
 The 'releases' table includes 36 columns of information for each album release, but the full album name is listed in the 'shoppe_product_translations' table, and sales information is in the 'product_sales_rollups' table. In the end, selecting 21 columns from a 3-way table join provided the following results for each release in the database. I decided on these attributes based on their value counts across the tables in question.
 
 ```SQL
+-- Example record from custom table for modeling:
 --[ RECORD 1 ]----------------------
 max_sales     | 24559
 product_id    | 829
@@ -170,23 +171,55 @@ The following pandas table was the result.
 ![](images/heatmap.png)
 Before moving forward with any modeling, it can be helpful to make a quick heatmap showing initial corellation between the raw predictors and the target.
 
-### 
+### Variance Inflation Factor (VIF)
+Since my goal is to have very interpretable coefficients, I chose to build a linear regression model. Linear models are sensitive to multicollinearity within predictors, so I will perform a VIF analysis.
 
-TABLE VIF
+Per [Wikipedia](https://en.wikipedia.org/wiki/Variance_inflation_factor): *The variance inflation factor (VIF) is the quotient of the variance in a model with multiple terms by the variance of a model with one term alone. It quantifies the severity of multicollinearity in an ordinary least squares regression analysis.*
 
-['Is this release exclusive to Vinyl Me, Please?',
-                        'Is there a digital download code included with this record?',
-                        'How many vinyl records are included in this release?',
-                        'Is this a heavier weight pressing (180g or 200g)?',
-                        'Is this a numbered/limited-run release?',
-                        'Is this a Tip-On jacket, where the cover print is done on a separate sheet of text-stock paper, and then wrapped/glued to a thick corrugated core?',
-                        'gatefold',
-                        'color',
-                        'recent']
+| VIF Factor | feature_name | Description
+| --- | --- | --- |
+| 1.1 | `exclusive` | Is this release exclusive to Vinyl Me, Please? |
+| 1.2 | `download_code` | Is there a digital download code included with this record? |
+| 1.4 | `lp_count` | How many vinyl records are included in this release? |
+| 1.3 | `weight` | Is this a heavier-weight pressing (180g or 200g)? |
+| 1.7 | `numbered` | Is this a numbered/limited-run release? |
+| 1.3 | `tip_on` | Is this a Tip-On jacket, where the cover print is done on a separate sheet of text-stock paper, and then wrapped/glued to a thick corrugated core? | 
+| 1.1 | `gatefold` | Is this a gatefold sleeve, which opens like a book? |
+| 2.2 | `custom_color` | Is the vinyl record any color other than black? |
+| 1.5 | `recent_release` | Was the original release year 2015 or newer? |
+
+The VIF analysis showed no collinearity between predictors (no values > 5), so all predictors can be retained.
+
+### Linear Model With And Without Log Transformed Target
+I fit linear models both using the standard target values (# of albums sold) and using log-tranformed target values. The process was the same for both models:
+* Fit linear model to predictor matrix (X).
+* Perform Ordinary Least Squares (OLS) Regression statsmodels Python package.
+* Drop any predictors that are not significant with a 95% confidence interval.
+  * Standard target: drop `download_code`, `lp_count`, and `weight`.
+  * Log-transformed target: drop `exclusive`, `download_code`, and `weight`.
+* Re-fit model.
+
+![](images/models.png)
+
+The charts above show that the linear model using the log-tranformed targets does a better job of capturing the trends in the data.
 
 
-* Album attributes corellated with MAX(sales.quantity_90d)
+### Interpreting Coefficients
+The table below shows the coefficients for the linear model with the log-transformed targets. 
 
-"Describe the process you used to ensure your model was properly fit."
+| Attribute | Coefficient (log-transformed) | Attribute corellated to increase in sales # by a factor of: |
+| --- | --- | --- |
+| `tip_on` | 2.97 | 19.5 x |
+| `numbered` | 1.16 | 3.2 x |
+| `custom_color` | 1.09 | 3.0 x |
+| `gatefold` | 1.00 | 2.7 x |
+| `lp_count` | -0.11 | 0.90 x |
+| `recent_release` | -0.60 | 0.55 x |
 
-discussion of the cleaning and featurization pipeline and how raw data were transformed to the data trained on.
+## Conclusions
+* Having both PostgreSQL and Python available makes it possible to decide which language is better suited to the task at hand.
+* While the album sales numbers are difficult to predict on, I can say with relative confidence that records that have premium packaging, are from a numbered release and have custom vinyl colors are corellated with higher sales numbers for Vinyl Me, Please.
+
+### Future Work
+* In order to make a more causal statement about factors that influence album sales, it would be necessary to pull in additional data sources, and do things like normalize for industry-wide album popularity.
+* There is a lot of room for additional work around customer behavior, especially if the company's additional data set of customer surveys is taken into account.
