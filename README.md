@@ -14,7 +14,6 @@
 <a name="#overview"></a>
 
 ## Overview & Goals  
-
 In their own words, Denver-based Vinyl Me, Please. is "a record of the month club. The best damn record club out there, in fact." They work with artists, labels and production facilities to re-issue old records, as well as release new albums. Their business model includes both monthly record club subscriptions as well as individual record sales. They have a large number of unique releases, and there are three 'release tracks' that users can subscribe to: Essentials, Classiscs, and Rap & Hip-Hop.
 
 [![](images/gorillaz_records.jpg)](https://www.vinylmeplease.com)
@@ -32,15 +31,13 @@ uses.
 <a name="#data_pipeline"></a>
 
 ## Data Pipeline  
-
 The team at Vinyl Me, Please. gave me access to a 13GB PostgreSQL database dump. This production/sales database consists of 118 separate tables, which relate to various customer, product and transaction history details. In order to work with the database, I restored the DB dump into a PostgreSQL database running in a Docker container on my local system. From there, I established a pipeline to Python using psycopg 2.
 
 Working in both PostgreSQL and Python allowed me to choose which language would most easily be able to handle a given task. On the SQL side, I built queries that joined up to five tables, and made use of convenient SQL aggregation functions.
 
 <a name="#eda"></a>
 
-## Exploratory Data Analysis (EDA)
-
+## General Exploratory Data Analysis (EDA)
 How does one make sense of a production database that consists of 118 tables? I found two PostgreSQL utility queries that proved to be invaluable when dealing with such a large database (see src/sql_utility_queries.sql). Sample output:
 
 ```SQL
@@ -64,31 +61,43 @@ How does one make sense of a production database that consists of 118 tables? I 
 ```
 
 ## Business Analytics
-
 A significant goal of mine was to perform some fairly standard business analytics on the database, using my PostgreSQL/psycopg2/Python workflow. I did not perform any modeling here, and the data was fairly clean and complete, but I think the insights gained are still valuable, and the scripts I created could easily be adapted to production usage.
 
-* Customer Count Per Total $ Spent
+### Customer Count Per Total $ Spent
 ![](images/customer_count_dollars_spent.png)
-This image is plotted on a log 
+This chart shows the distribution of customers based on their total lifetime spending in $USD with Vinyl Me, Please. The y-axis is on a log scale in order to show the high-spending outliers, despite most accounts being clustered near $0.
 
-
+### Subscription Renewal Income By Month
 ![](images/subscription_income.png)
+There was a move to a new subscription billing system in 2018-04, which explains the data in those months. The numbers show that there is not a huge amount of variation in monthly subscription income.
 
+### Customer Retention Percentage By Month
 ![](images/retention.png)
+The customer retention rate was calculated using the following formula:
+* Customer Retention Rate = ((E-N)/S) * 100
 
+Where:
+* E = Number of customers at the end of a period
+* N = Number of new customers acquired during that period
+* S = Number of customers at the start of that period
+[(reference)](https://www.evergage.com/blog/how-calculate-customer-retention/)
+
+In this case, these customer numbers were calculated by summing up the total number of Activation and Cancellation events from the beginning of the database up through the beginning or end of the time period in question, as needed.
+
+The retention rates are also fairly consistent, with the exception of 2018-03 / 2018-04. This drop might possibly be explained by 3-month gift subscriptions expiring that were given over the holidays. Further investigation might be able to confirm this.
+
+## Exploring Factors Corellated With Album Sales
+My main focus in this project was to explore whether any attributes of a given album release might be corellated with its sales numbers. My focus was to build an inferential model with interpretable coefficients rather than a predictive model. In order to get a handle on the available data, I did some release-specific EDA.
+
+### Album Release-Specific Exploratory Data Analysis (EDA)
 ![](images/max_90_sales.png)
-![](images/heatmap.png)
+The general distribution of albums vs. number of sales looked fairly similar whether I plotted total lifetime sales numbers, or maximum 30- or 90-day sales rollup numbers, so I decided to use 90-day sales rollup numbers for each release, since that metric should not penalize fairly recent releases vs. releases that have been selling for years.
+
+The y-axis is on a log scale, since most releases have relatively low sales numbers, but there are is another group of 'super-hits' much higher up the scale.
 
 
-
-* Customer Count per Total Spent
-* Subscription Renewal Income By Month
-* Customer Retention Chart
-
-
-
-
-A significant amount of effort went into exploring all of the tables within the database, and mapping out which tables would need to be joined together in order to provide interesting insights. For example, here is one entry from the 'releases' table:
+### Feature Selection and cleaning
+A significant amount of effort went into exploring all of the tables within the database, and mapping out which tables would need to be joined together in order to provide interesting insights related to album sales. For example, here is one entry from the 'releases' table:
 
 ```SQL
 SELECT * FROM releases WHERE product_id = 829;
@@ -155,19 +164,13 @@ I built Python classes to perform my PostgreSQL queries via psycopg2 and then cl
 * Concatenated text in 'jacket_type' and 'jacket_style' columns and creating binary 'tip-on' and 'gatefold' columns based on presence of keywords, while accounting for different spellings (e.g. 'tip-on', 'Tip on', 'Tip-on', 'Tip-On').
 
 The following pandas table was the result. 
-
 ![](images/album_features_table.png)
 
+### Basic Heatmap
+![](images/heatmap.png)
+Before moving forward with any modeling, it can be helpful to make a quick heatmap showing initial corellation between the raw predictors and the target.
 
-
-- Business Analytics:
-- not much cleaning
-- few NANs
-
-
-
-- Deep dive on album sales numbers and factors
-* Plot Total # Sales vs. Releases
+### 
 
 TABLE VIF
 
