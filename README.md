@@ -6,7 +6,22 @@
 ## Table of Contents  
 * [Overview & Goals](##overview)<BR>
 * [Data Pipeline](##data_pipeline)<BR>
-* [Exploratory Data Analysis (EDA)](##eda)<BR>
+* [General Exploratory Data Analysis (EDA)](##eda)<BR>
+* [Business Analytics](##analytics)<BR>
+  * [Customer Count Per Total $ Spent](##spending)
+  * [Subscription Renewal Income By Month](##renewal_income)
+  * [Customer Retention Percentage By Month](##retention)
+* [Exploring Factors Corellated With Album Sales](##album_sales)
+  * [Album Release-Specific Exploratory Data Analysis (EDA)](##sales_eda)
+  * [Feature Selection and Cleaning](##feat_selec)
+  * [Pandas DataFrame For Modeling](##model_df)
+  * [Variance Inflation Factor (VIF)](##vif)
+  * [Linear Model With And Without Log Transformed Target](##models)
+  * [Interpreting Coefficients](##coeffs)
+  * [Conclusions & Future Work](##concl)
+
+Business Analytics
+
 
 * [Conclusion and Future Project Ideas](##conclusion_future)<BR>
 
@@ -60,16 +75,24 @@ Working in both PostgreSQL and Python allowed me to choose which language would 
 (8 rows)
 ```
 
+<a name="#analytics"></a>
+
 ## Business Analytics
 A significant goal of mine was to perform some fairly standard business analytics on the database, using my PostgreSQL/psycopg2/Python workflow. I did not perform any modeling here, and the data was fairly clean and complete, but I think the insights gained are still valuable, and the scripts I created could easily be adapted to production usage.
+
+<a name="#spending"></a>
 
 ### Customer Count Per Total $ Spent
 ![](images/customer_count_dollars_spent.png)
 This chart shows the distribution of customers based on their total lifetime spending in $USD with *Vinyl Me, Please.* The y-axis is on a log scale in order to show the high-spending outliers, despite most accounts being clustered near $0.
 
+<a name="#renewal_income"></a>
+
 ### Subscription Renewal Income By Month
 ![](images/subscription_income.png)
 There was a move to a new subscription billing system in 2018-04, which explains the data in those months. The numbers show that there is not a huge amount of variation in monthly subscription income.
+
+<a name="#retention"></a>
 
 ### Customer Retention Percentage By Month
 ![](images/retention.png)
@@ -85,8 +108,12 @@ In this case, these customer numbers were calculated by **summing up the total n
 
 The retention rates are also fairly consistent, with the exception of 2018-03 / 2018-04. This drop might possibly be explained by 3-month gift subscriptions expiring that were given over the holidays. Further investigation might be able to confirm this.
 
+<a name="#album_sales"></a>
+
 ## Exploring Factors Corellated With Album Sales
 My main focus in this project was to explore whether any attributes of a given album release might be corellated with its sales numbers. My focus was to build an inferential model with interpretable coefficients rather than a predictive model. In order to get a handle on the available data, I did some release-specific EDA.
+
+<a name="#sales_eda"></a>
 
 ### Album Release-Specific Exploratory Data Analysis (EDA)
 ![](images/max_90_sales.png)
@@ -94,8 +121,9 @@ The general distribution of albums vs. number of sales looked fairly similar whe
 
 The y-axis is on a log scale, since most releases have relatively low sales numbers, but there are is another group of 'super-hits' much higher up the scale.
 
+<a name="#feat_selec"></a>
 
-### Feature Selection and cleaning
+### Feature Selection and Cleaning
 A significant amount of effort went into exploring all of the tables within the database, and mapping out which tables would need to be joined together in order to provide interesting insights related to album sales. For example, here is one entry from the 'releases' table:
 
 ```SQL
@@ -163,12 +191,16 @@ I built Python classes to perform my PostgreSQL queries via psycopg2 and then cl
 * Set `custom_color` to 1 where color was anything other than `black` or `None`.
 * Concatenated text in `jacket_type` and `jacket_style` columns and creating binary `tip-on` and `gatefold` columns based on presence of keywords, while accounting for different spellings (e.g. `tip-on`, `Tip on`, `Tip-on`, `Tip-On`).
 
-### Resulting pandas Table As A Base For Modeling 
+<a name="#model_df"></a>
+
+### Pandas DataFrame For Modeling
 ![](images/album_features_table.png)
 
 ### Basic Heatmap
 Before moving forward with any modeling, it can be helpful to make a quick heatmap showing initial corellation between the raw predictors and the target:
 ![](images/heatmap.png)
+
+<a name="#vif"></a>
 
 ### Variance Inflation Factor (VIF)
 Since my goal is to have very **interpretable coefficients**, I chose to build a **linear regression model**. Linear models are sensitive to multicollinearity within predictors, so I will perform a **VIF analysis**.
@@ -189,6 +221,8 @@ From [Wikipedia](https://en.wikipedia.org/wiki/Variance_inflation_factor): *The 
 
 The VIF analysis showed no collinearity between predictors (no values > 5), so all predictors can be retained.
 
+<a name="#models"></a>
+
 ### Linear Model With And Without Log Transformed Target
 I fit linear models both using the standard target values (# of albums sold) and using log-tranformed target values. The process was the same for both models:
 * Fit linear model to predictor matrix (X).
@@ -202,6 +236,7 @@ I fit linear models both using the standard target values (# of albums sold) and
 
 The charts above show that the linear model using the log-tranformed targets does a better job of capturing the trends in the data.
 
+<a name="#coeffs"></a>
 
 ### Interpreting Coefficients
 The table below shows the coefficients for the linear model with the log-transformed targets. 
@@ -215,10 +250,11 @@ The table below shows the coefficients for the linear model with the log-transfo
 | `lp_count` | -0.11 | 0.90 x |
 | `recent_release` | -0.60 | 0.55 x |
 
-## Conclusions
+<a name="#concl"></a>
+
+## Conclusions & Future Work
 * Having both PostgreSQL and Python available makes it possible to decide which language is better suited to the task at hand.
 * While the album sales numbers are difficult to predict on, I can say with relative confidence that records that have premium packaging, are from a numbered release and have custom vinyl colors are corellated with higher sales numbers for *Vinyl Me, Please.*
 
-### Future Work
 * In order to make a more causal statement about factors that influence album sales, it would be necessary to pull in additional data sources, and do things like normalize for industry-wide album popularity.
 * There is a lot of room for additional work around customer behavior, especially if the company's additional data set of customer surveys is taken into account.
