@@ -24,6 +24,7 @@ class SpendingPerCustomer(object):
                 '''
 
     def get_spending_per_customer(self):
+        # Execute SQL query and return pandas dataframe.
         print("Executing query...\n")
         self.cur.execute(self.db_query)
         results = self.cur.fetchall()

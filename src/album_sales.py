@@ -44,6 +44,7 @@ class AlbumSales(object):
                 '''
 
     def get_sales_data(self):
+        # Execute SQL query above and return a pandas dataframe
         print("Executing query...\n")
         self.cur.execute(self.db_query)
         results_sales = self.cur.fetchall()
@@ -109,6 +110,8 @@ class AlbumSales(object):
         return self.df_records_drop
 
     def regression_model(self):
+        # Build a linear regression model based on the cleaned dataframe. Drop
+        # columns that were previously found to be insignificant.
         self.df_model = self.df_records_drop.drop(columns=['product_id',
                                                            'name'])
         self.X = self.df_model.drop(columns=['max_sales'])

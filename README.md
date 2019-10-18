@@ -22,7 +22,7 @@ In their own words, Denver-based Vinyl Me, Please. is "a record of the month clu
 
 I had the privilege of working with their production database. Going into this project, my goals included the following:
 * Work with the team at ‘Vinyl Me, Please’ to provide meaningful insights for their business.
-* Gain experience wrangling messy, real-world data, including building a data pipeline from a SQL database to python data analysis and visualization tools that can be adapted to future
+* Gain experience wrangling messy, real-world data, including building a data pipeline from a SQL database to Python data analysis and visualization tools that can be adapted to future
 uses.
 * Gain experience with modeling techniques to provide relevant business insights:
    * Are there album attributes that might contribute to the popularity of a certain release within the ‘Vinyl Me, Please’ ecosystem?
@@ -39,12 +39,102 @@ Working in both PostgreSQL and Python allowed me to choose which language would 
 
 <a name="#eda"></a>
 
-## Exploratory Data Analysis (EDA)]
+## Exploratory Data Analysis (EDA)
 
-A significant amount of effort went into exploring all of the tables within the database, and mapping out which tables would need to be joined together in order to provide interesting insights. For example, the 'releases' table includes 36 columns of information for each album release, but the full album name is listed in the 'shoppe_product_translations' table, and sales information is in the 'product_sales_rollups' table. In the end, a 3-way table join provided the following results for each release in the database:
+How does one make sense of a production database that consists of 118 tables? I found two PostgreSQL utility queries that proved to be invaluable when dealing with such a large database (see src/sql_utility_queries.sql). Sample output:
 
 ```SQL
--[ RECORD 1 ]-+-----
+-- List all tables sorted by size:
+                     relation                     | total_size 
+--------------------------------------------------+------------
+ chargebee_events                                 | 5830 MB
+ ledger_entries                                   | 1441 MB
+ chargebee_sync_operations                        | 1139 MB
+ chargebee_invoices                               | 1097 MB
+ shoppe_orders                                    | 579 MB
+(118 rows)
+
+-- Find all tables that contain a column name LIKE '%active%':
+ table_schema |        table_name         
+--------------+---------------------------
+ public       | customer_features
+ public       | customer_plan_tiers
+ public       | features
+(8 rows)
+```
+
+## Business Analytics
+
+A significant goal of mine was to perform some fairly standard business analytics on the database, using my PostgreSQL/psycopg2/Python workflow. I did not perform any modeling here, and the data was fairly clean and complete, but I think the insights gained are still valuable, and the scripts I created could easily be adapted to production usage.
+
+* Customer Count Per Total $ Spent
+![](images/customer_count_dollars_spent.png)
+This image is plotted on a log 
+
+
+![](images/subscription_income.png)
+
+![](images/retention.png)
+
+![](images/max_90_sales.png)
+![](images/heatmap.png)
+
+
+
+* Customer Count per Total Spent
+* Subscription Renewal Income By Month
+* Customer Retention Chart
+
+
+
+
+A significant amount of effort went into exploring all of the tables within the database, and mapping out which tables would need to be joined together in order to provide interesting insights. For example, here is one entry from the 'releases' table:
+
+```SQL
+SELECT * FROM releases WHERE product_id = 829;
+-[ RECORD 1 ]-------------+---------------------------------------
+id                        | 519
+artist_id                 | 261
+product_id                | 829
+title                     | Demon Days
+exclusive                 | 0
+kind                      | 1
+total_quantity            | 
+mastering_engineer        | Barry Grint
+mastering_studio          | Alchemy Mastering
+pressing_location         | GZ Media
+disc_format               | 0
+lp_count                  | 2
+speed                     | 0
+weight                    | standard
+jacket_type               | Gatefold
+jacket_style              | Direct-To-Board
+extras                    | Full-Color Sticker Pack
+label                     | Warner Bros Records
+release_year              | 2005
+download_code             | f
+vinyl_size                | 0
+remastering_details       | 1
+color                     | Red Translucent
+upc                       | 
+vanity_url                | demon_days_vinyl
+subscription_schedule_url | vol-52-gorillaz-demon-days
+video_url                 | 
+exclusive_properties      | {remastering_details,color,extras,mastering_studio,mastering_engineer}
+created_at                | 2018-08-21 15:50:19.994693
+updated_at                | 2018-10-30 20:33:19.007816
+foil_stamped              | f
+numbered                  | f
+custom_feature_a          | 2LP Red Demon Days Vinyl
+custom_feature_b          | Gatefold Jacket
+custom_feature_c          | Half Speed Remastered for Vinyl at Alchemy
+custom_feature_d          | Exclusive Gorillaz sticker pack with record
+```
+
+The 'releases' table includes 36 columns of information for each album release, but the full album name is listed in the 'shoppe_product_translations' table, and sales information is in the 'product_sales_rollups' table. In the end, selecting 21 columns from a 3-way table join provided the following results for each release in the database. I decided on these attributes based on their value counts across the tables in question.
+
+```SQL
+--[ RECORD 1 ]----------------------
 max_sales     | 24559
 product_id    | 829
 name          | Gorillaz 'Demon Days'
@@ -59,31 +149,27 @@ jacket_type   | Gatefold
 jacket_style  | Direct-To-Board
 ```
 
-I built Python classes to perform my PostgreSQL queries via psycopg2 and then clean and/or process the resuls.
+I built Python classes to perform my PostgreSQL queries via psycopg2 and then clean and process the resuls. Because of the choice of my features, I was able to binary-encode most of them. Some examples of data cleaning techniques that were used:
+* Filled Null values, generally with 0 ('not feature'), depending on the feature.
+* Set 'custom_color' to 1 where color was anything other than 'black' or None.
+* Concatenated text in 'jacket_type' and 'jacket_style' columns and creating binary 'tip-on' and 'gatefold' columns based on presence of keywords, while accounting for different spellings (e.g. 'tip-on', 'Tip on', 'Tip-on', 'Tip-On').
 
+The following pandas table was the result. 
 
-### Helpful PostgreSQL Utilities
-
-I will mention two PostgreSQL utility queries that proved to be invaluable when dealing with such a large database. The following two queries can be seen in src/sql_utility_queries.txt:
-* List all tables sorted by size
-* Find all tables that contain a certain column
-
-
-![](images/customer_count_dollars_spent.png)
-
-![](images/subscription_income.png)
-
-![](images/retention.png)
-
-![](images/max_90_sales.png)
-![](images/heatmap.png)
+![](images/album_features_table.png)
 
 
 
-* Customer Count per Total Spent
-* Subscription Renewal Income By Month
-* Customer Retention Chart
-* Album attributes corellated with MAX(sales.quantity_90d)
+- Business Analytics:
+- not much cleaning
+- few NANs
+
+
+
+- Deep dive on album sales numbers and factors
+* Plot Total # Sales vs. Releases
+
+TABLE VIF
 
 ['Is this release exclusive to Vinyl Me, Please?',
                         'Is there a digital download code included with this record?',
@@ -96,9 +182,7 @@ I will mention two PostgreSQL utility queries that proved to be invaluable when 
                         'recent']
 
 
-
-* Plot Total # Sales vs. Releases
-* Cancelations per month?
+* Album attributes corellated with MAX(sales.quantity_90d)
 
 "Describe the process you used to ensure your model was properly fit."
 

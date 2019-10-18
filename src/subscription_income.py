@@ -52,6 +52,7 @@ class SubscriptionIncome(object):
                 '''
 
     def get_subscription_income(self):
+        # Execute SQL query and return pandas dataframe.
         print("Executing query...\n")
         self.cur.execute(self.db_query)
         results = self.cur.fetchall()
