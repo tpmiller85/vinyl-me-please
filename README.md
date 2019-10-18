@@ -14,31 +14,31 @@
 <a name="#overview"></a>
 
 ## Overview & Goals  
-In their own words, Denver-based Vinyl Me, Please. is "a record of the month club. The best damn record club out there, in fact." They work with artists, labels and production facilities to re-issue old records, as well as release new albums. Their business model includes both monthly record club subscriptions as well as individual record sales. They have a large number of unique releases, and there are three 'release tracks' that users can subscribe to: Essentials, Classiscs, and Rap & Hip-Hop.
+In their own words, Denver-based **Vinyl Me, Please.** is *"a record of the month club. The best damn record club out there, in fact."* They work with artists, labels and production facilities to re-issue old records, as well as release new albums. Their business model includes both monthly record club subscriptions as well as individual record sales. They have a large number of unique releases, and there are three **'release tracks'** that users can subscribe to: **Essentials**, **Classiscs**, and **Rap & Hip-Hop**.
 
 [![](images/gorillaz_records.jpg)](https://www.vinylmeplease.com)
 [![](images/subscription_tracks.png)](https://www.vinylmeplease.com)
 
-I had the privilege of working with their production database. Going into this project, my goals included the following:
-* Work with the team at ‘Vinyl Me, Please’ to provide meaningful insights for their business.
+I had the privilege of working with their **production database**. Going into this project, my **goals** included the following:
+* Work with the team at *Vinyl Me, Please.* to provide meaningful insights for their business.
 * Gain experience wrangling messy, real-world data, including building a data pipeline from a SQL database to Python data analysis and visualization tools that can be adapted to future
 uses.
 * Gain experience with modeling techniques to provide relevant business insights:
-   * Are there album attributes that might contribute to the popularity of a certain release within the ‘Vinyl Me, Please’ ecosystem?
+   * Are there album attributes that might contribute to the popularity of a certain release within the *Vinyl Me, Please.* ecosystem?
    * What insights into customer behavior can be gained from this data set?
 
 
 <a name="#data_pipeline"></a>
 
 ## Data Pipeline  
-The team at Vinyl Me, Please. gave me access to a 13GB PostgreSQL database dump. This production/sales database consists of 118 separate tables, which relate to various customer, product and transaction history details. In order to work with the database, I restored the DB dump into a PostgreSQL database running in a Docker container on my local system. From there, I established a pipeline to Python using psycopg 2.
+The team at *Vinyl Me, Please.* gave me access to a **13GB PostgreSQL database dump**. This production/sales database consists of **118 separate tables**, which relate to various customer, product and transaction history details. In order to work with the database, I restored the DB dump into a **PostgreSQL database** running in a **Docker container on my local system**. From there, I established a pipeline to **Python** using **psycopg 2**.
 
-Working in both PostgreSQL and Python allowed me to choose which language would most easily be able to handle a given task. On the SQL side, I built queries that joined up to five tables, and made use of convenient SQL aggregation functions.
+Working in both PostgreSQL and Python allowed me to choose which language would most easily be able to handle a given task. On the SQL side, I built queries that **joined up to five tables**, and made use of convenient **SQL aggregation functions**.
 
 <a name="#eda"></a>
 
 ## General Exploratory Data Analysis (EDA)
-How does one make sense of a production database that consists of 118 tables? I found two PostgreSQL utility queries that proved to be invaluable when dealing with such a large database (see src/sql_utility_queries.sql). Sample output:
+**How does one make sense of a production database that consists of 118 tables?** I found two PostgreSQL utility queries that proved to be invaluable when dealing with such a large database (see src/sql_utility_queries.sql). Sample output:
 
 ```SQL
 -- List all tables sorted by size:
@@ -65,7 +65,7 @@ A significant goal of mine was to perform some fairly standard business analytic
 
 ### Customer Count Per Total $ Spent
 ![](images/customer_count_dollars_spent.png)
-This chart shows the distribution of customers based on their total lifetime spending in $USD with Vinyl Me, Please. The y-axis is on a log scale in order to show the high-spending outliers, despite most accounts being clustered near $0.
+This chart shows the distribution of customers based on their total lifetime spending in $USD with *Vinyl Me, Please.* The y-axis is on a log scale in order to show the high-spending outliers, despite most accounts being clustered near $0.
 
 ### Subscription Renewal Income By Month
 ![](images/subscription_income.png)
@@ -73,16 +73,15 @@ There was a move to a new subscription billing system in 2018-04, which explains
 
 ### Customer Retention Percentage By Month
 ![](images/retention.png)
-The customer retention rate was calculated using the following formula:
-* Customer Retention Rate = ((E-N)/S) * 100
+The customer retention rate was calculated using the following formula [(reference)](https://www.evergage.com/blog/how-calculate-customer-retention/):
+* Customer Retention Rate = **((E-N)/S) * 100**
 
 Where:
-* E = Number of customers at the end of a period
-* N = Number of new customers acquired during that period
-* S = Number of customers at the start of that period
-[(reference)](https://www.evergage.com/blog/how-calculate-customer-retention/)
+* **E** = Number of customers at the end of a period
+* **N** = Number of new customers acquired during that period
+* **S** = Number of customers at the start of that period
 
-In this case, these customer numbers were calculated by summing up the total number of Activation and Cancellation events from the beginning of the database up through the beginning or end of the time period in question, as needed.
+In this case, these customer numbers were calculated by **summing up the total number of Activation and Cancellation events from the beginning of the database** up through the beginning or end of the time period in question, as needed.
 
 The retention rates are also fairly consistent, with the exception of 2018-03 / 2018-04. This drop might possibly be explained by 3-month gift subscriptions expiring that were given over the holidays. Further investigation might be able to confirm this.
 
@@ -140,7 +139,7 @@ custom_feature_c          | Half Speed Remastered for Vinyl at Alchemy
 custom_feature_d          | Exclusive Gorillaz sticker pack with record
 ```
 
-The 'releases' table includes 36 columns of information for each album release, but the full album name is listed in the 'shoppe_product_translations' table, and sales information is in the 'product_sales_rollups' table. In the end, selecting 21 columns from a 3-way table join provided the following results for each release in the database. I decided on these attributes based on their value counts across the tables in question.
+The `releases` table includes 36 columns of information for each album release, but the full album name is listed in the `shoppe_product_translations` table, and sales information is in the `product_sales_rollups` table. In the end, selecting 21 columns from a 3-way table join provided the following results for each release in the database. I decided on these attributes based on their value counts across the tables in question.
 
 ```SQL
 -- Example record from custom table for modeling:
@@ -160,25 +159,25 @@ jacket_style  | Direct-To-Board
 ```
 
 I built Python classes to perform my PostgreSQL queries via psycopg2 and then clean and process the resuls. Because of the choice of my features, I was able to binary-encode most of them. Some examples of data cleaning techniques that were used:
-* Filled Null values, generally with 0 ('not feature'), depending on the feature.
-* Set 'custom_color' to 1 where color was anything other than 'black' or None.
-* Concatenated text in 'jacket_type' and 'jacket_style' columns and creating binary 'tip-on' and 'gatefold' columns based on presence of keywords, while accounting for different spellings (e.g. 'tip-on', 'Tip on', 'Tip-on', 'Tip-On').
+* Filled Null values, generally with 0 (`not feature`), depending on the feature.
+* Set `custom_color` to 1 where color was anything other than `black` or `None`.
+* Concatenated text in `jacket_type` and `jacket_style` columns and creating binary `tip-on` and `gatefold` columns based on presence of keywords, while accounting for different spellings (e.g. `tip-on`, `Tip on`, `Tip-on`, `Tip-On`).
 
-The following pandas table was the result. 
+### Resulting pandas Table As A Base For Modeling 
 ![](images/album_features_table.png)
 
 ### Basic Heatmap
+Before moving forward with any modeling, it can be helpful to make a quick heatmap showing initial corellation between the raw predictors and the target:
 ![](images/heatmap.png)
-Before moving forward with any modeling, it can be helpful to make a quick heatmap showing initial corellation between the raw predictors and the target.
 
 ### Variance Inflation Factor (VIF)
-Since my goal is to have very interpretable coefficients, I chose to build a linear regression model. Linear models are sensitive to multicollinearity within predictors, so I will perform a VIF analysis.
+Since my goal is to have very **interpretable coefficients**, I chose to build a **linear regression model**. Linear models are sensitive to multicollinearity within predictors, so I will perform a **VIF analysis**.
 
-Per [Wikipedia](https://en.wikipedia.org/wiki/Variance_inflation_factor): *The variance inflation factor (VIF) is the quotient of the variance in a model with multiple terms by the variance of a model with one term alone. It quantifies the severity of multicollinearity in an ordinary least squares regression analysis.*
+From [Wikipedia](https://en.wikipedia.org/wiki/Variance_inflation_factor): *The variance inflation factor (VIF) is the quotient of the variance in a model with multiple terms by the variance of a model with one term alone. It quantifies the severity of multicollinearity in an ordinary least squares regression analysis.*
 
 | VIF Factor | feature_name | Description
 | --- | --- | --- |
-| 1.1 | `exclusive` | Is this release exclusive to Vinyl Me, Please? |
+| 1.1 | `exclusive` | Is this release exclusive to *Vinyl Me, Please*? |
 | 1.2 | `download_code` | Is there a digital download code included with this record? |
 | 1.4 | `lp_count` | How many vinyl records are included in this release? |
 | 1.3 | `weight` | Is this a heavier-weight pressing (180g or 200g)? |
@@ -218,7 +217,7 @@ The table below shows the coefficients for the linear model with the log-transfo
 
 ## Conclusions
 * Having both PostgreSQL and Python available makes it possible to decide which language is better suited to the task at hand.
-* While the album sales numbers are difficult to predict on, I can say with relative confidence that records that have premium packaging, are from a numbered release and have custom vinyl colors are corellated with higher sales numbers for Vinyl Me, Please.
+* While the album sales numbers are difficult to predict on, I can say with relative confidence that records that have premium packaging, are from a numbered release and have custom vinyl colors are corellated with higher sales numbers for *Vinyl Me, Please.*
 
 ### Future Work
 * In order to make a more causal statement about factors that influence album sales, it would be necessary to pull in additional data sources, and do things like normalize for industry-wide album popularity.
