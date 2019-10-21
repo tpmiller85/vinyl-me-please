@@ -246,8 +246,7 @@ The table below shows the coefficients for the linear model with the log-transfo
 <a name="#concl"></a>
 
 ## Conclusions & Future Work
-* Having both PostgreSQL and Python available makes it possible to decide which language is better suited to the task at hand.
 * While the album sales numbers are difficult to predict on, I can say with relative confidence that records that have premium packaging, are from a numbered release and have custom vinyl colors are corellated with higher sales numbers for *Vinyl Me, Please.*
-
+* Having both PostgreSQL and Python available makes it possible to decide which language is better suited to the task at hand.
 * In order to make a more causal statement about factors that influence album sales, it would be necessary to pull in additional data sources, and do things like normalize for industry-wide album popularity.
 * There is a lot of room for additional work around customer behavior, especially if the company's additional data set of customer surveys is taken into account.
