@@ -1,6 +1,6 @@
 # Vinyl Me, Please
 
-[![](images_c2/vinyl_logo.jpg)](https://www.vinylmeplease.com)
+[![](images/capstone_2vinyl_logo.jpg)](https://www.vinylmeplease.com)
 
 ## Table of Contents  
 * [Overview & Goals](##overview)<BR>
@@ -24,8 +24,8 @@
 ## Overview & Goals  
 In their own words, Denver-based **Vinyl Me, Please.** is *"a record of the month club. The best damn record club out there, in fact."* They work with artists, labels and production facilities to re-issue old records, as well as release new albums. Their business model includes both monthly record club subscriptions as well as individual record sales. They have a large number of unique releases, and there are three **'release tracks'** that users can subscribe to: **Essentials**, **Classiscs**, and **Rap & Hip-Hop**.
 
-[![](images_c2/gorillaz_records.jpg)](https://www.vinylmeplease.com)
-[![](images_c2/subscription_tracks.png)](https://www.vinylmeplease.com)
+[![](images/capstone_2gorillaz_records.jpg)](https://www.vinylmeplease.com)
+[![](images/capstone_2subscription_tracks.png)](https://www.vinylmeplease.com)
 
 I had the privilege of working with their **production database**. Going into this project, my **goals** included the following:
 * Work with the team at *Vinyl Me, Please.* to provide meaningful insights for their business.
@@ -76,19 +76,19 @@ A significant goal of mine was to perform some fairly standard business analytic
 <a name="#spending"></a>
 
 ### Customer Count Per Total $ Spent
-![](images_c2/customer_count_dollars_spent.png)
+![](images/capstone_2customer_count_dollars_spent.png)
 This chart shows the distribution of customers based on their total lifetime spending in $USD with *Vinyl Me, Please.* The y-axis is on a log scale in order to show the high-spending outliers, despite most accounts being clustered near $0.
 
 <a name="#renewal_income"></a>
 
 ### Subscription Renewal Income By Month
-![](images_c2/subscription_income.png)
+![](images/capstone_2subscription_income.png)
 There was a move to a new subscription billing system in 2018-04, which explains the data in those months. The numbers show that there is not a huge amount of variation in monthly subscription income.
 
 <a name="#retention"></a>
 
 ### Customer Retention Percentage By Month
-![](images_c2/retention.png)
+![](images/capstone_2retention.png)
 The customer retention rate was calculated using the following formula [(reference)](https://www.evergage.com/blog/how-calculate-customer-retention/):
 * Customer Retention Rate = **((E-N)/S) * 100**
 
@@ -109,7 +109,7 @@ My main focus in this project was to explore whether any attributes of a given a
 <a name="#sales_eda"></a>
 
 ### Album Release-Specific Exploratory Data Analysis (EDA)
-![](images_c2/max_90_sales.png)
+![](images/capstone_2max_90_sales.png)
 The general distribution of albums vs. number of sales looked fairly similar whether I plotted total lifetime sales numbers, or maximum 30- or 90-day sales rollup numbers, so I decided to use 90-day sales rollup numbers for each release, since that metric should not penalize fairly recent releases vs. releases that have been selling for years.
 
 The y-axis is on a log scale, since most releases have relatively low sales numbers, but there are is another group of 'super-hits' much higher up the scale.
@@ -187,11 +187,11 @@ I built Python classes to perform my PostgreSQL queries via psycopg2 and then cl
 <a name="#model_df"></a>
 
 ### Pandas DataFrame For Modeling
-![](images_c2/album_features_table.png)
+![](images/capstone_2album_features_table.png)
 
 ### Basic Heatmap
 Before moving forward with any modeling, it can be helpful to make a quick heatmap showing initial corellation between the raw predictors and the target:
-![](images_c2/heatmap.png)
+![](images/capstone_2heatmap.png)
 
 <a name="#vif"></a>
 
@@ -225,7 +225,7 @@ I fit linear models both using the standard target values (# of albums sold) and
   * Log-transformed target: drop `exclusive`, `download_code`, and `weight`.
 * Re-fit model.
 
-![](images_c2/models.png)
+![](images/capstone_2models.png)
 
 The charts above show that the linear model using the log-tranformed targets does a better job of capturing the trends in the data.
 
