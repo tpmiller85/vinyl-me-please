@@ -37,6 +37,7 @@ PYTHON_DATA_DIRECTORY = os.path.join(SRC_PYTHON_DIRECTORY, 'data')  # Directory
 
 SRC_DATA_DIRECTORY = os.path.join(SRC_DIRECTORY, 'models')  # Directory for pickled models and model info
 ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]  # The root directory for the project
+SAFE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'data')  # Directory
 
 MODELS_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'models')  # Directory for pickled models and model info
 SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')  # The data directory
@@ -107,9 +108,15 @@ class SurveyJoinAccountData(object):
         # Col 12 - Where do you live?
         # Col 16 - Do you own/lease a vehicle?
 
-        dummy_df_where_live = pd.get_dummies(self.df_model.iloc[:, 2])
-        dummy_df_house = pd.get_dummies(self.df_model.iloc[:, 3])
-        dummy_df_car = pd.get_dummies(self.df_model.iloc[:, 4])
+        dummy_df_where_live = pd.get_dummies(self.df_model.iloc[:, 2],
+                                      prefix='Where do you live?',
+                                      prefix_sep='_')
+        dummy_df_house = pd.get_dummies(self.df_model.iloc[:, 3],
+                                      prefix='What is your living arrangement?',
+                                      prefix_sep='_')
+        dummy_df_car = pd.get_dummies(self.df_model.iloc[:, 4],
+                                      prefix='Do you own/lease a vehicle?',
+                                      prefix_sep='_')
 
         self.df_model = pd.concat([self.df_model, (dummy_df_where_live * 3)], axis=1)
         self.df_model = pd.concat([self.df_model, (dummy_df_house * 3)], axis=1)
@@ -131,7 +138,7 @@ class SurveyJoinAccountData(object):
 
 
     def join_survey_status(self):
-        self.merged_df = pd.merge(self.df_status,
+        self.df_merged = pd.merge(self.df_status,
                         self.df_model,
                         left_on=self.df_status.iloc[:, 0],
                         right_on=self.df_model.iloc[:, 0],
@@ -154,8 +161,32 @@ class SurveyJoinAccountData(object):
         """
         data_frame.iloc[:,col_idx] = data_frame.iloc[:,col_idx].apply(lambda x:
                                     1 if str(x) == 'cancelled' else 0)
-        print(f"\nEncoded account status - column {col_idx}.")
 
+        print(f"\nEncoded account status - column {col_idx}.\n")
+
+
+    def remove_pii(self, data_frame, col_idx_lst=[0, 1, 2, 4]):
+        """ 
+        Function to binary encode the values in a pandas DataFrame column.
+
+        Parameters: 
+            col_idx_list (int): The index of the column to be encoded.
+            data_frame: Name of the DataFrame containing the column in question.
+
+        Returns: 
+            DataFrame column with values encoded as follows:
+                'str(column title)' --> 1
+                anything else       --> -1
+        """
+        data_frame.drop(data_frame.columns[col_idx_lst], axis=1, inplace=True)
+        print(f"Removed PII data - columns {col_idx_lst}.\n")
+
+
+    def save_to_csv(self, data_frame, file_name='modeling_data.csv'):
+        modeling_data_filepath = os.path.join(SAFE_DATA_DIRECTORY,
+                                              file_name)
+        data_frame.to_csv(modeling_data_filepath, index=False)
+        print(f"Saved cleaned & safe modeling data to {modeling_data_filepath}.")
 
 
 if __name__ == '__main__':
@@ -165,7 +196,6 @@ if __name__ == '__main__':
     survey_join.create_dummy_cols()
     survey_join.query_customer_status()
     survey_join.join_survey_status()
-    survey_join.col_status_encode(survey_join.df_noobs)
-
-    # Need to save to safe spot, email still there.
-
+    survey_join.col_status_encode(survey_join.df_merged)
+    survey_join.remove_pii(survey_join.df_merged)
+    survey_join.save_to_csv(survey_join.df_merged)
