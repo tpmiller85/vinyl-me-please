@@ -2,50 +2,38 @@ import os
 import sys
 sys.path.append('.')
 
-import numpy as np
 import pandas as pd
-from pprint import pprint
-
 import psycopg2
 
-from sklearn.linear_model import LinearRegression
-from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
-from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, BaggingClassifier, BaggingRegressor
-from sklearn.ensemble.partial_dependence import plot_partial_dependence 
-from sklearn.model_selection import cross_val_score, train_test_split
-from sklearn.metrics import mean_squared_error
-from sklearn.inspection import plot_partial_dependence
-
-import statsmodels.api as sm
-from statsmodels.stats.outliers_influence import variance_inflation_factor
-from statsmodels.regression.linear_model import OLSResults
-from statsmodels.tools.tools import add_constant
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-plt.style.use('fivethirtyeight')
-sns.set_style("white")
-
-pd.set_option("display.max_rows", None)
-pd.set_option("display.max_columns", None)
-pd.set_option("display.max_colwidth", 80)
-
-FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]  # Directory this script is in
-SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]  # The 'src' directory
-SRC_PYTHON_DIRECTORY = os.path.join(SRC_DIRECTORY, 'python')  # Directory
-PYTHON_DATA_DIRECTORY = os.path.join(SRC_PYTHON_DIRECTORY, 'data')  # Directory
-
-SRC_DATA_DIRECTORY = os.path.join(SRC_DIRECTORY, 'models')  # Directory for pickled models and model info
-ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]  # The root directory for the project
-SAFE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'data')  # Directory
-
-MODELS_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'models')  # Directory for pickled models and model info
-SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')  # The data directory
-
-# from src.data.make_survey_dataset import load_data_as_dataframe
+### ----- Set up project directory path names to load and save data ----- ###
+FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
+SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
+ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]
+SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
+SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'data')
 
 
 class SurveyJoinAccountData(object):
+    """
+    Vinyl Me, Please survey and customer data processing class.
+    
+    Loads featurized survey data from .csv, subsets DataFrame to extract
+    data to be used for model building, and adds target data (subscription
+    status) from production PostgreSQL database by joining on customer email
+    address.
+
+    Requires:
+        survey data (.csv): Featurized .csv saved to SENSITIVE_DATA_DIRECTORY,
+        which must be located outside of any git repo due to Personally
+        Identifiable Information (PII).
+        production database: Instance of Vinyl Me, Please production database,
+        online and reachable by Psycopg2.
+
+    Returns:
+        Saves featurized DataFrame to .csv to SENSITIVE_DATA_DIRECTORY. All
+        PII should be removed, but still saving outside git repo to be safe.
+    """
+
 
     def __init__(self, featurized_df_filename='featurized_survey_data.csv'):
         featurized_df_filepath = os.path.join(SENSITIVE_DATA_DIRECTORY,
@@ -183,7 +171,7 @@ class SurveyJoinAccountData(object):
 
 
     def save_to_csv(self, data_frame, file_name='modeling_data.csv'):
-        modeling_data_filepath = os.path.join(SAFE_DATA_DIRECTORY,
+        modeling_data_filepath = os.path.join(SENSITIVE_DATA_DIRECTORY,
                                               file_name)
         data_frame.to_csv(modeling_data_filepath, index=False)
         print(f"Saved cleaned & safe modeling data to {modeling_data_filepath}.")
