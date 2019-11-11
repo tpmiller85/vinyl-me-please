@@ -4,8 +4,10 @@ sys.path.append('.')
 
 import numpy as np
 import pandas as pd
-
 import psycopg2
+
+# Import survey data loading script
+from src.data.make_survey_dataset import load_data_as_dataframe
 
 # Set up project directory path names to load and save data
 FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
@@ -13,37 +15,37 @@ SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
 ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]
 SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
 
-# Import survey data loading script
-from src.data.make_survey_dataset import load_data_as_dataframe
-
 
 class BuildSurveyFeatures(object):
     """
-    This class loads survey data from .csv, numerically encodes a number of
-    columns of interest, and then saves the featurized DataFrame to .csv in
-    a secure directory outside of the git repo.
+    Vinyl Me, Please survey cleaning and featurizing class.
+    
+    Loads survey data from .csv, numerically encodes columns of interest, saves
+    featurized DataFrame to .csv in secure directory outside of git repo.
     """  
 
     def __init__(self):
-        # Load survey data and create main DataFrame and df_col_names. 
+        """ Load survey data and create main DataFrame df and df_col_names."""
+
         self.df, self.df_col_names = load_data_as_dataframe(
                                   filename='2019 Member Survey - Raw Data.csv')
         print(f"Loaded survey DataFrame of size {self.df.shape}.\n")
 
-
     def col_how_much_use_encode(self, data_frame, col_idx_list):
-        """ 
-        Function to numerically encode the values in pandas DataFrame columns:
+        """Featurizes pandas DataFrame columns.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         How often do you use/interact with the following Vinyl Me, Please
-            elements? - Survey columns 133-145
+        elements? - Survey columns 133-145
 
-        Parameters: 
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
             col_idx_list (list of int): Numerical indicies of the columns to be
                 encoded.
-            data_frame: DataFrame with columns to be encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'use' dictionary
+            DataFrame column with values encoded via the 'use' dictionary
             below.
         """
         use = {"I don't know about it": 0,
@@ -62,17 +64,19 @@ class BuildSurveyFeatures(object):
 
 
     def col_how_often_do_encode(self, data_frame, col_idx_list):
-        """
-        Function to numerically encode the values in pandas DataFrame columns:
+        """Featurizes pandas DataFrame columns.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         How often you do these things? - Survey columns 415-420
 
-        Parameters: 
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
             col_idx_list (list of int): Numerical indicies of the columns to be
                 encoded.
-            data_frame: DataFrame with columns to be encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'freq' dictionary
+            DataFrame column with values encoded via the 'freq' dictionary
             below.
         """
         
@@ -81,8 +85,7 @@ class BuildSurveyFeatures(object):
                 'A few times a month': 2,
                 'About once a week': 3,
                 'Several times per week': 4,
-                'Every day': 5
-                }
+                'Every day': 5}
         
         for col_idx in col_idx_list:
             # Filling NaN values with base case.
@@ -91,20 +94,23 @@ class BuildSurveyFeatures(object):
                                           data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how often\" columns: {col_idx_list}")
 
-
     def col_how_long_records_encode(self, data_frame, col_idx_list=[33]):
-        """ 
-        Function to numerically encode the values in pandas DataFrame column:
+        """Featurizes pandas DataFrame columns.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         How long have you been buying records? - Survey column 33
 
-        Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
+        Args: 
             data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
-            DataFrame with column values encoded as in the 'length' dictionary
-                below.
+            DataFrame column with values encoded via the 'length' dictionary
+            below.
         """
+
         length = {'I just started': 0,
                 '6 - 12 months': 0.5,
                 '1-3 years': 1,
@@ -120,15 +126,16 @@ class BuildSurveyFeatures(object):
                                           data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how long collect records\" column: {col_idx_list}")
 
-
     def encode_records_own(self, data_frame, col_idx=34):
-        """ 
-        Function to bin and normalize the values in pandas DataFrame column:
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes (bins and normalizes) the values in pandas
+        DataFrame columns that answer the following question:
         About how many records do you own? - Survey column 34
 
-        Parameters: 
-            col_idx (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+        Args: 
+            data_frame: DataFrame with column to be encoded.
+            col_idx (int): The numerical index of the column to be encoded.
 
         Returns: 
             DataFrame column with values encoded on a scale of 0-5, binned to
@@ -136,7 +143,10 @@ class BuildSurveyFeatures(object):
             set to 5.
         """
 
-        data_frame.iloc[:,col_idx].fillna(0, inplace=True)
+        # Filling NaN values with median number of records owned.
+        median_num_owned = data_frame.iloc[:,col_idx].median()
+        data_frame.iloc[:,col_idx].fillna(median_num_owned, inplace=True)
+        # Setting max at 90th percentile of population to limit outliers.
         max_cutoff = np.percentile(data_frame.iloc[:,col_idx].to_numpy(), 90)
         data_frame.iloc[:,col_idx] = np.where(
                                       data_frame.iloc[:,col_idx] >= max_cutoff,
@@ -148,20 +158,23 @@ class BuildSurveyFeatures(object):
                                                               lambda x: int(x))
         print(f"Encoded \"how many records own\" column: {col_idx}")
 
-
     def col_binary_encode(self, data_frame, col_idx_list):
-        """ 
-        Function to binary encode the values in a pandas DataFrame column.
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes the values in pandas DataFrame columns that contain
+        only two options (yes/no questions).
 
-        Parameters:
-            col_idx_list (list of int): Indicies of the columns to be encoded.
-            data_frame: Name of DataFrame containing the columns in question.
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
             DataFrame column with values encoded as follows:
-                'str(column title)' --> 1
+                'str(column title)' -->  1
                 anything else       --> -1
         """
+
         for col_idx in col_idx_list:
             label = data_frame.columns.get_level_values(1)[col_idx]
             data_frame.iloc[:,col_idx] = data_frame.iloc[:,col_idx].apply(
@@ -169,19 +182,22 @@ class BuildSurveyFeatures(object):
                                           | (x == 1) else -1)
         print(f"Binary encoded columns: {col_idx_list}")
 
-
     def col_age_encode(self, data_frame, col_idx_list=[9]):
-        """ 
-        Function to numerically encode the values in pandas DataFrame column:
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         How old are you? - Survey column 9
 
-        Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'age' dictionary below.
+            DataFrame column with values encoded via the 'age' dictionary below.
         """
+
         age = {'Under 18': 0,
                '18-20': 0.5,
                '21-24': 1,
@@ -198,70 +214,82 @@ class BuildSurveyFeatures(object):
                                             in data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how old are you\" column: {col_idx}")
 
-
     def col_gender_encode(self, data_frame, col_idx_list=[10]):
-        """ 
-        Function to numerically encode the values in pandas DataFrame column:
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         To what gender do you identify? - Survey column 10
 
-        Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
             DataFrame column with values encoded as follows:
                 Male          --> 1
                 Female, Other --> 0
         """
+
         for col_idx in col_idx_list:
             data_frame.iloc[:,col_idx] = data_frame.iloc[:,col_idx].apply(
                                             lambda x: 1 if (str(x) == 'Male')
                                             else 0)
         print(f"Encoded \"gender identity\" column: {col_idx_list}")
 
-
     def col_records_month_encode(self, data_frame, col_idx_list=[36]):
-        """ 
-        Function to numerically encode the values in pandas DataFrame column:
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         About how many records do you buy per month? - Survey column 36
 
-        Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'record_nums' dictionary below.
+            DataFrame column with values encoded via the 'record_nums'
+            dictionary below. Note date-type formatting issue with source data.
                 0 - 1         --> 0-1           --> 0
                 3-Feb         --> 2-3           --> 1
                 5-Apr         --> 4-5           --> 2
                 10-Jun        --> 6-10          --> 3
                 More than 10  --> More than 10  --> 4
         """
+
         record_nums = {'0 - 1': 0,
-                    '3-Feb': 1,
-                    '5-Apr': 2,
-                    '10-Jun': 3,
-                    'More than 10': 4}
+                       '3-Feb': 1,
+                       '5-Apr': 2,
+                       '10-Jun': 3,
+                       'More than 10': 4}
         
         for col_idx in col_idx_list:
+            # Filling NaN values with base case (0-1 records/month).
             data_frame.iloc[:,col_idx].fillna('0 - 1', inplace=True)
             data_frame.iloc[:,col_idx] = [record_nums[num] for num \
                                         in data_frame.iloc[:,col_idx]]
         print(f"Encoded \"records buy per month\" column: {col_idx_list}")
 
-
     def col_satisfy_encode(self, data_frame, col_idx_list):
-        """ 
-        Function to numerically encode the values in a pandas DataFrame columns:
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
         How satisfied are you with the following? - Survey columns 125 - 132
 
-        Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'sentiment' dictionary below.
-        """
+            DataFrame column with values encoded via the 'sentiment' dictionary
+            below.
+        """ 
+
         sentiment = {'Very Satisfied': 2,
                     'Satisfied': 1,
                     'Neutral': 0,
@@ -274,33 +302,51 @@ class BuildSurveyFeatures(object):
                                             in data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how satisfied are you\" columns: {col_idx_list}")
 
-
     def col_agree_encode(self, data_frame, col_idx_list):
-        """ 
-        Function to numerically encode the values in a pandas DataFrame columns:
-        How much do you agree with these statements?
+        """Featurizes pandas DataFrame column.
+        
+        Numerically encodes the values in pandas DataFrame columns that answer
+        the following question:
+        How much do you agree with these statements? - Survey columns 180 - 216
 
-        Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+        Args: 
+            data_frame: DataFrame with columns to be encoded.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'sentiment' dictionary below.
-        """
+            DataFrame column with values encoded via the 'sentiment' dictionary
+            below.
+        """ 
+
         sentiment = {'strongly agree': 2,
-                    'agree': 1,
-                    'neutral': 0,
-                    'disagree': -1,
-                    'strongly disagree': -2}
+                     'agree': 1,
+                     'neutral': 0,
+                     'disagree': -1,
+                     'strongly disagree': -2}
         
         for col_idx in col_idx_list:
+            # Filling NaN values with base case 'Neutral'.
             data_frame.iloc[:,col_idx].fillna('Neutral', inplace=True)
-            data_frame.iloc[:,col_idx] = [sentiment[str(rating).lower()] \
-                                        for rating in data_frame.iloc[:,col_idx]]
+            data_frame.iloc[:,col_idx] = [sentiment[str(rating).lower()] for \
+                                          rating in data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how much agree\" columns: {col_idx_list}")
 
 
     def save_to_csv(self, data_frame, file_name='featurized_survey_data.csv'):
+        """Saves DataFrame to .csv.
+        
+        Saves .csv to SENSITIVE_DATA_DIRECTORY, which must be located outside
+        of any git repo due to Personally Identifiable Information (PII).
+
+        Args: 
+            data_frame: DataFrame to be saved to .csv.
+            file_name (str): Name of resulting .csv file.
+
+        Returns: 
+            DataFrame saved as .csv to SENSITIVE_DATA_DIRECTORY.
+        """
+
         featurized_df_filepath = os.path.join(SENSITIVE_DATA_DIRECTORY,
                                               file_name)
         data_frame.to_csv(featurized_df_filepath, index=False)

@@ -13,12 +13,15 @@ SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
 
 def load_data_as_dataframe(filename='2019 Member Survey - Raw Data.csv'):
     """
-    Load survey data from .csv file located in SENSITIVE_DATA_DIRECTORY,
+    Loads survey data from .csv file located in SENSITIVE_DATA_DIRECTORY,
     outside of this git repo, due to customer PII.
+
+    Args:
+        filename (str): The name of the survey data file.
+
     Returns:
-        df - survey data as pandas DataFrame, with two-level MultiIndex.
-        df_col_names - separate pandas DataFrame with column names for ease
-            of use.
+        df: survey data as pandas DataFrame, with two-level MultiIndex.
+        df_col_names: pandas DataFrame with column names for ease of use.
     """ 
 
     filepath = os.path.join(SENSITIVE_DATA_DIRECTORY, filename)
