@@ -4,14 +4,23 @@ sys.path.append('.')
 
 import pandas as pd
 
-FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]  # Directory this script is in
-SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]  # The 'src' directory
-ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]  # The root directory for the project
-SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')  # The data directory
+# Set up project directory path names to load and save data
+FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
+SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
+ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]
+SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
 
 
 def load_data_as_dataframe(filename='2019 Member Survey - Raw Data.csv'):
-    #
+    """
+    Load survey data from .csv file located in SENSITIVE_DATA_DIRECTORY,
+    outside of this git repo, due to customer PII.
+    Returns:
+        df - survey data as pandas DataFrame, with two-level MultiIndex.
+        df_col_names - separate pandas DataFrame with column names for ease
+            of use.
+    """ 
+
     filepath = os.path.join(SENSITIVE_DATA_DIRECTORY, filename)
     df = pd.read_csv(filepath,
                             header=[0,1],

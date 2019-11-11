@@ -5,6 +5,7 @@ sys.path.append('.')
 import numpy as np
 import pandas as pd
 from pprint import pprint
+import pickle
 
 from sklearn.linear_model import LinearRegression
 from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
@@ -12,6 +13,8 @@ from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor, Bagg
 from sklearn.ensemble.partial_dependence import plot_partial_dependence 
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.metrics import mean_squared_error
+from sklearn.metrics import f1_score
+
 from sklearn.inspection import plot_partial_dependence
 
 from sklearn.ensemble import GradientBoostingClassifier
@@ -79,91 +82,92 @@ class CreateModels(object):
         print("Created X and y and split into train/test.")
 
 
-    def grid_search(self, X_train, y_train, algo='adaboost'):
+    def grid_search(self, algo='adaboost'):
         ''' gets a rough idea where the best parameters lie '''
     
+        X_train = self.X_train
+        y_train = self.y_train
+
         if algo == 'adaboost':
-            classifier = AdaBoostClassifier()
+            self.classifier = AdaBoostClassifier()
             boosting_grid_rough = {'learning_rate': np.logspace(-3, 0, num = 4),
-                                   'n_estimators': [50, 100, 200, 500, 1000],
+                                   'n_estimators': [50, 200, 500, 1000],
                                    'random_state': [42]}
         elif algo == 'gbc':
-            classifier = GradientBoostingClassifier()
-            boosting_grid_rough = {'learning_rate': np.logspace(-3, 0, num = 4),
-                                   'n_estimators': [50, 100, 200, 500, 1000],
-                                   'random_state': [42]}
+            self.classifier = GradientBoostingClassifier()
+            boosting_grid_rough = {'learning_rate': np.logspace(-4, -1, num = 4),
+                        'max_depth': [1, 2, 5],
+                        'n_estimators': [50, 200, 400],
+                        'min_samples_split': np.logspace(-3, -1, num = 3),
+                        'min_samples_leaf': np.logspace(-3, -1, num = 3),
+                        'random_state': [42]}
 
-
-'n_estimators':range(20,81,10)
-'max_depth':range(5,16,2), 'min_samples_split':range(200,1001,200)
-gsearch2 = GridSearchCV(estimator = GradientBoostingClassifier(learning_rate=0.1, n_estimators=60, max_features='sqrt', subsample=0.8, random_state=10), 
-param_test3 = {'min_samples_split':range(1000,2100,200), 'min_samples_leaf':range(30,71,10)}
-gsearch3 = GridSearchCV(estimator = GradientBoostingClassifier(learning_rate=0.1, n_estimators=60,max_depth=9,max_features='sqrt', subsample=0.8, random_state=10), 
-param_test4 = {'max_features':range(7,20,2)}
-gsearch4 = GridSearchCV(estimator = GradientBoostingClassifier(learning_rate=0.1, n_estimators=60,max_depth=9, min_samples_split=1200, min_samples_leaf=60, subsample=0.8, random_state=10),
-
-learning_rates = [1, 0.5, 0.25, 0.1, 0.05, 0.01]
-n_estimators = [1, 2, 4, 8, 16, 32, 64, 100, 200]
-max_depths = np.linspace(1, 32, 32, endpoint=True)
-
-
-
-
-from sklearn.metrics import roc_curve, auc
-false_positive_rate, true_positive_rate, thresholds = roc_curve(y_test, y_pred)
-roc_auc = auc(false_positive_rate, true_positive_rate)
-roc_auc
-
-
-
-
-
-        coarse_search = GridSearchCV(classifier,
-                                    boosting_grid_rough,
-                                    scoring='f1',
-                                    n_jobs=-1)
-        print(f"Starting grid search - coarse using {classifier}.")
-        print("Will take several minutes.")
-        coarse_search.fit(self.X_train, self.y_train)
-        coarse_params = coarse_search.best_params_
-        coarse_score = coarse_search.best_score_
-        print("Coarse search best parameters for {classifier}:")
-        for param, val in coarse_params.items():
-            print("{0:<20s} | {1}".format(param, val))
-        print("Coarse search best score: {0:0.3f}".format(coarse_score))
+        #------------ Coarse GridSearchCV Section ------------#
+        # coarse_search = GridSearchCV(self.classifier,
+        #                             boosting_grid_rough,
+        #                             scoring='f1',
+        #                             error_score=np.nan,
+        #                             n_jobs=-1)
+        # print(f"Starting grid search - coarse using {type(self.classifier).__name__}.")
+        # print("Will take several minutes.")
+        # coarse_search.fit(X_train, y_train)
+        # coarse_params = coarse_search.best_params_
+        # coarse_score = coarse_search.best_score_
+        # print(f"Coarse search best parameters for {self.classifier}:")
+        # for param, val in coarse_params.items():
+        #     print("{0:<20s} | {1}".format(param, val))
+        # print("Coarse search best score: {0:0.3f}".format(coarse_score))
 
         if algo == 'adaboost':
             boosting_grid_fine = {'learning_rate': [0.05, 0.1, 0.15],
                                   'n_estimators': [150, 200, 250],
                                   'random_state': [42]}
-        elif algo == 'gbr':
-            classifier = GBR()
+        elif algo == 'gbc':
+            boosting_grid_fine = {'learning_rate': [0.0005, 0.001, 0.005],
+                                   'max_depth': [1, 2, 3],
+                                   'n_estimators': [100, 200, 300],
+                                   'min_samples_split': [0.005, 0.01, 0.05],
+                                   'min_samples_leaf': [0.005, 0.01, 0.05],
+                                   'random_state': [42]}
 
-                      dict(gbm__n_estimators = [50, 100, 150, 200],
-                           gbm__max_depth = [5, 6, 7, 8, 9, 10]),
-                      cv = 5,
-                      scoring = make_scorer(mean_squared_error),
-                      verbose = 100)
-
-
-
-        fine_search = GridSearchCV(AdaBoostClassifier(),
-                                boosting_grid_fine_noobs_df,
+        fine_search = GridSearchCV(self.classifier,
+                                boosting_grid_fine,
                                 scoring='f1',
+                                error_score=np.nan,
                                 n_jobs=-1)
-        print("\nStarting grid search - fine")
+        print(f"Starting grid search - fine using {type(self.classifier).__name__}.")
+        print("Will take several minutes.")
         fine_search.fit(X_train, y_train)
         fine_params = fine_search.best_params_
         fine_score = fine_search.best_score_
-        print("Fine search best parameters:")
+        print(f"Fine search best parameters for {type(self.classifier).__name__}:")
         for param, val in fine_params.items():
             print("{0:<20s} | {1}".format(param, val))
         print("Fine search best score: {0:0.3f}".format(fine_score))
-        model_best = fine_search.best_estimator_
-        print("Returning best model.")
-        return model_best
+        self.model_best = fine_search.best_estimator_
+
+        y_pred = self.model_best.predict(self.X_test)
+        fscore = f1_score(self.y_test, y_pred)
+        print(f"F1 score on holdout set using best {type(self.classifier).__name__} "
+              f"model: {fscore:.3f}\n")
+        print(f"Returning best {type(self.classifier).__name__} model.")
+        return self.model_best
+
+
+    def save_model(self, model):
+        self.model_best.fit(self.X, self.y)
+
+        model_name = type(self.classifier).__name__
+        save_model_filepath = os.path.join(MODELS_DIRECTORY, model_name)
+
+        with open(f"{save_model_filepath}.pkl","wb") as f:
+            pickle.dump(self.model_best, f)
+        print(f"Saving best {type(self.classifier).__name__} model to "
+              f"{save_model_filepath}.")
 
 
 if __name__ == '__main__':
     create_models = CreateModels()
     create_models.make_train_test_data(create_models.df)
+    create_models.grid_search(algo='adaboost')
+    create_models.save_model(create_models.model_best)

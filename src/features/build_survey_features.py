@@ -7,27 +7,29 @@ import pandas as pd
 
 import psycopg2
 
-FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]  # Directory this script is in
-SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]  # The 'src' directory
-SRC_PYTHON_DIRECTORY = os.path.join(SRC_DIRECTORY, 'python')  # Directory
-PYTHON_DATA_DIRECTORY = os.path.join(SRC_PYTHON_DIRECTORY, 'data')  # Directory
+# Set up project directory path names to load and save data
+FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
+SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
+ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]
+SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
 
-SRC_DATA_DIRECTORY = os.path.join(SRC_DIRECTORY, 'models')  # Directory for pickled models and model info
-ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]  # The root directory for the project
-
-MODELS_DIRECTORY = os.path.join(ROOT_DIRECTORY, 'models')  # Directory for pickled models and model info
-SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')  # The data directory
-
+# Import survey data loading script
 from src.data.make_survey_dataset import load_data_as_dataframe
 
+
 class BuildSurveyFeatures(object):
-    # This class will query a connected PostgreSQL database using psycopg2, and
-    # then clean the data for modeling.
+    """
+    This class loads survey data from .csv, numerically encodes a number of
+    columns of interest, and then saves the featurized DataFrame to .csv in
+    a secure directory outside of the git repo.
+    """  
 
     def __init__(self):
+        # Load survey data and create main DataFrame and df_col_names. 
         self.df, self.df_col_names = load_data_as_dataframe(
                                   filename='2019 Member Survey - Raw Data.csv')
         print(f"Loaded survey DataFrame of size {self.df.shape}.\n")
+
 
     def col_how_much_use_encode(self, data_frame, col_idx_list):
         """ 
@@ -36,11 +38,13 @@ class BuildSurveyFeatures(object):
             elements? - Survey columns 133-145
 
         Parameters: 
-            col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+            col_idx_list (list of int): Numerical indicies of the columns to be
+                encoded.
+            data_frame: DataFrame with columns to be encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'use' dictionary below.
+            DataFrame column with values encoded as in the 'use' dictionary
+            below.
         """
         use = {"I don't know about it": 0,
                "I don't care about it": 0,
@@ -49,11 +53,11 @@ class BuildSurveyFeatures(object):
                "Frequently": 3}
         
         for col_idx in col_idx_list:
-            # Filling NaN values with base case
+            # Filling NaN values with base case.
             data_frame.iloc[:,col_idx].fillna("I don't know about it",
                                               inplace=True)
             data_frame.iloc[:,col_idx] = [use[val] for val in
-                                                    data_frame.iloc[:,col_idx]]
+                                          data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how much use\" columns: {col_idx_list}")
 
 
@@ -63,13 +67,13 @@ class BuildSurveyFeatures(object):
         How often you do these things? - Survey columns 415-420
 
         Parameters: 
-            col_idx_list (list of int): List of indicies of the columns to be
+            col_idx_list (list of int): Numerical indicies of the columns to be
                 encoded.
-            data_frame: DataFrame containing the columns in question.
+            data_frame: DataFrame with columns to be encoded.
 
         Returns: 
-            DataFrame with column values encoded as in the 'freq' dictionary
-                below.
+            DataFrame column with values encoded as in the 'freq' dictionary
+            below.
         """
         
         freq = {'Hardly ever': 0,
@@ -81,10 +85,10 @@ class BuildSurveyFeatures(object):
                 }
         
         for col_idx in col_idx_list:
-            # Filling NaN values with base case
+            # Filling NaN values with base case.
             data_frame.iloc[:,col_idx].fillna("Hardly ever", inplace=True)
             data_frame.iloc[:,col_idx] = [freq[val] for val in
-                                                data_frame.iloc[:,col_idx]]
+                                          data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how often\" columns: {col_idx_list}")
 
 
@@ -95,10 +99,11 @@ class BuildSurveyFeatures(object):
 
         Parameters: 
             col_idx_list (int): The index of the column to be encoded.
-            data_frame: Name of the DataFrame containing the column in question.
+            data_frame: DataFrame with columns to be encoded.
 
         Returns: 
-            DataFrame column with values encoded as in the 'length' dictionary below.
+            DataFrame with column values encoded as in the 'length' dictionary
+                below.
         """
         length = {'I just started': 0,
                 '6 - 12 months': 0.5,
@@ -109,9 +114,10 @@ class BuildSurveyFeatures(object):
                 'More than 15 years': 3}
         
         for col_idx in col_idx_list:
+            # Filling NaN values with base case.
             data_frame.iloc[:,col_idx].fillna('I just started', inplace=True)
             data_frame.iloc[:,col_idx] = [length[val] for val in 
-                                                data_frame.iloc[:,col_idx]]
+                                          data_frame.iloc[:,col_idx]]
         print(f"Encoded \"how long collect records\" column: {col_idx_list}")
 
 
