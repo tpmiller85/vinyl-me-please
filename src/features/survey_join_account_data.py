@@ -115,14 +115,11 @@ class SurveyJoinAccountData(object):
 
         self.df_model = source_df.iloc[:, model_column_list]
 
-    def create_dummy_cols(self, source_df):
+    def create_dummy_cols(self):
         """Creates dummy (one-hot encoded) columns for several answer columns.
 
         THIS METHOD MUST BE RUN AS A FINAL PRE-PROCESSING STEP, AS IT WILL
         FLATTEN THE DATAFRAME MULTI-INDEX AND SHIFT COLUMN NUMBERS!
-
-        Args:
-            source_df - DataFrame with columns to be one-hot encoded.
 
         Returns:
             Adds dummy columns for the following survey questions:
@@ -131,21 +128,20 @@ class SurveyJoinAccountData(object):
                 Do you own/lease a vehicle? - Original survey column 16
         """
 
-        dummy_df_where_live = pd.get_dummies(source_df.iloc[:, 2],
+        dummy_df_where_live = pd.get_dummies(self.df_model.iloc[:, 2],
                                       prefix='Where do you live?',
                                       prefix_sep='_')
-        dummy_df_house = pd.get_dummies(source_df.iloc[:, 3],
+        dummy_df_house = pd.get_dummies(self.df_model.iloc[:, 3],
                                       prefix='What is your living arrangement?',
                                       prefix_sep='_')
-        dummy_df_car = pd.get_dummies(source_df.iloc[:, 4],
+        dummy_df_car = pd.get_dummies(self.df_model.iloc[:, 4],
                                       prefix='Do you own/lease a vehicle?',
                                       prefix_sep='_')
 
-        source_df = pd.concat([source_df, (dummy_df_where_live * 3)], axis=1)
-        source_df = pd.concat([source_df, (dummy_df_house * 3)], axis=1)
-        source_df = pd.concat([source_df, (dummy_df_car * 3)], axis=1)
-
-        source_df.drop(source_df.columns[[2, 3, 4]], axis=1, inplace=True)
+        self.df_model = pd.concat([self.df_model, (dummy_df_where_live * 3)], axis=1)
+        self.df_model = pd.concat([self.df_model, (dummy_df_house * 3)], axis=1)
+        self.df_model = pd.concat([self.df_model, (dummy_df_car * 3)], axis=1)
+        self.df_model.drop(self.df_model.columns[[2, 3, 4]], axis=1, inplace=True)
 
     def query_customer_status(self):
         """Runs PostgreSQL query defined in class __init__ method.
@@ -238,7 +234,7 @@ if __name__ == '__main__':
     survey_join = SurveyJoinAccountData()
     survey_join.subset_noobs(survey_join.df)
     survey_join.create_model_df(survey_join.df_noobs)
-    survey_join.create_dummy_cols(survey_join.df_model)
+    survey_join.create_dummy_cols()
     survey_join.query_customer_status()
     survey_join.join_survey_status(survey_join.df_status, survey_join.df_model)
     survey_join.col_status_encode(survey_join.df_merged)
