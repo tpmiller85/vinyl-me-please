@@ -9,7 +9,7 @@ import psycopg2
 # Import survey data loading script
 from src.data.make_survey_dataset import load_data_as_dataframe
 
-# Set up project directory path names to load and save data
+### ----- Set up project directory path names to load and save data ----- ###
 FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
 SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
 ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]

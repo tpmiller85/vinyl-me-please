@@ -4,7 +4,7 @@ sys.path.append('.')
 
 import pandas as pd
 
-# Set up project directory path names to load and save data
+### ----- Set up project directory path names to load and save data ----- ###
 FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
 SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
 ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]

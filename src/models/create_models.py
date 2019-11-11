@@ -103,6 +103,8 @@ class CreateModels(object):
                         'random_state': [42]}
 
         #------------ Coarse GridSearchCV Section ------------#
+        #------- Un-comment if coarse search is needed -------#
+
         # coarse_search = GridSearchCV(self.classifier,
         #                             boosting_grid_rough,
         #                             scoring='f1',
@@ -117,6 +119,7 @@ class CreateModels(object):
         # for param, val in coarse_params.items():
         #     print("{0:<20s} | {1}".format(param, val))
         # print("Coarse search best score: {0:0.3f}".format(coarse_score))
+        #-----------------------------------------------------#
 
         if algo == 'adaboost':
             boosting_grid_fine = {'learning_rate': [0.05, 0.1, 0.15],
