@@ -86,7 +86,7 @@ class CreateModels(object):
                                                             random_state=42)
         print("Created X and y and split into train/test.")
 
-    def grid_search(self, algo='adaboost'):
+    def grid_search(self, algo='adaboost', coarse=False):
         """
         Performs GridSearchCV and returns the best model.
 
@@ -116,27 +116,27 @@ class CreateModels(object):
                         'min_samples_split': np.logspace(-3, -1, num = 3),
                         'min_samples_leaf': np.logspace(-3, -1, num = 3),
                         'random_state': [42]}
+        else:
+            print("Supported options: algo='adaboost', algo='gbc'")
 
-        #------------ Coarse GridSearchCV Section ------------#
-        #------- Un-comment if coarse search is needed -------#
-
-        # coarse_search = GridSearchCV(self.classifier,
-        #                             boosting_grid_rough,
-        #                             scoring='f1',
-        #                             error_score=np.nan,
-        #                             n_jobs=-1)
-        # print(f"Starting grid search - coarse using "
-        #       f"{type(self.classifier).__name__}.")
-        # print("Will take several minutes.")
-        # 
-        # coarse_search.fit(X_train, y_train)
-        # coarse_params = coarse_search.best_params_
-        # coarse_score = coarse_search.best_score_
-        # print(f"Coarse search best parameters for {self.classifier}:")
-        # for param, val in coarse_params.items():
-        #     print("{0:<20s} | {1}".format(param, val))
-        # print("Coarse search best score: {0:0.3f}".format(coarse_score))
-        #-----------------------------------------------------#
+        # Coarse search only if "coarse" flag == True:
+        if coarse:
+            coarse_search = GridSearchCV(self.classifier,
+                                        boosting_grid_rough,
+                                        scoring='f1',
+                                        error_score=np.nan,
+                                        n_jobs=-1)
+            print(f"Starting grid search - coarse using "
+                f"{type(self.classifier).__name__}.")
+            print("Will take several minutes.")
+            
+            coarse_search.fit(X_train, y_train)
+            coarse_params = coarse_search.best_params_
+            coarse_score = coarse_search.best_score_
+            print(f"Coarse search best parameters for {self.classifier}:")
+            for param, val in coarse_params.items():
+                print("{0:<20s} | {1}".format(param, val))
+            print("Coarse search best score: {0:0.3f}".format(coarse_score))
 
         if algo == 'adaboost':
             boosting_grid_fine = {'learning_rate': [0.05, 0.1, 0.15],
@@ -202,5 +202,5 @@ class CreateModels(object):
 if __name__ == '__main__':
     create_models = CreateModels()
     create_models.make_train_test_data(create_models.df)
-    create_models.grid_search(algo='adaboost')
+    create_models.grid_search(algo='adaboost', coarse=True)
     create_models.save_model(create_models.model_best)
