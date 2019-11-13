@@ -1,3 +1,7 @@
+import os
+import sys
+sys.path.append('.')
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -29,6 +33,18 @@ warnings.filterwarnings("ignore",category=DeprecationWarning)
 import logging
 logging.getLogger("LdaMallet").setLevel(logging.WARNING)
 
+# Import survey data loading script
+from src.data.make_survey_dataset import load_data_as_dataframe
+
+### ----- Set up project directory path names to load and save data ----- ###
+FILE_DIRECTORY = os.path.split(os.path.realpath(__file__))[0]
+SRC_DIRECTORY = os.path.split(FILE_DIRECTORY)[0]
+ROOT_DIRECTORY = os.path.split(SRC_DIRECTORY)[0]
+SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
+
+"""
+SILL NEEDS DOCSTRING WORK!
+"""
 
 class SurveyNLP(object):
     # This class will query a connected PostgreSQL database using psycopg2, and
@@ -43,14 +59,15 @@ class SurveyNLP(object):
         self.mallet_path = ("/Users/timothymiller/Galvanize/capstone_2_3"
                             "/mallet-2.0.8/bin/mallet")
 
+        self.df, self.df_col_names = load_data_as_dataframe(
+                                  filename='2019 Member Survey - Raw Data.csv')
+        print(f"Loaded survey DataFrame of size {self.df.shape}.\n")
 
-    def load_survey_data(self, file_path='2019 Member Survey - Raw Data.csv'):
-        self.df = pd.read_csv(file_path, header=[0,1], low_memory=False)
+    def load_survey_data(self):
         self.df_noobs = self.df[(self.df.iloc[:,33] == 'I just started') 
                          | (self.df.iloc[:,33] == '6 - 12 months') 
                          | (self.df.iloc[:,33] == '1-3 years')]
         return self.df, self.df_noobs
-
 
     def display_sklearn_topics(self, model, feature_names, num_words):
         for topic_idx, topic in enumerate(model.components_):
@@ -266,11 +283,14 @@ if __name__ == '__main__':
     # 35 - Why did you start buying vinyl originally?
     # 123 - My favorite thing about Vinyl Me, Please is...
     # 124 - My LEAST favorite thing about Vinyl Me, Please is...
-    nlp.gensim_preprocessing(35, df_noobs)
-    nlp.gensim_mallet_lda(num_topics=5, num_words=10)
-    nlp.gensim_standard_lda(num_topics=5, num_words=10)
-    nlp.sklearn_lda(col_num=35,
+    column_idx = 124
+    num_words = 15
+
+    nlp.gensim_preprocessing(column_idx, df_noobs)
+    nlp.gensim_mallet_lda(num_topics=5, num_words=num_words)
+    nlp.gensim_standard_lda(num_topics=5, num_words=num_words)
+    nlp.sklearn_lda(col_num=column_idx,
                     data_frame=df_noobs,
                     num_topics=5,
-                    num_words=10)
-    nlp.sklearn_nmf(col_num=35, data_frame=df_noobs, num_words=10)
+                    num_words=num_words)
+    nlp.sklearn_nmf(col_num=column_idx, data_frame=df_noobs, num_words=num_words)

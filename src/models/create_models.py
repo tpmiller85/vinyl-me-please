@@ -176,7 +176,7 @@ class CreateModels(object):
         return self.model_best
 
     def save_model(self, model):
-        """Saves trained, picked model to MODELS_DIRECTORY.
+        """Saves trained, pickled model to MODELS_DIRECTORY.
 
         Model was previously trained using data split into train/test sets.
         Before saving, model using best hyperparameters is trained on the full
@@ -186,7 +186,7 @@ class CreateModels(object):
             model: Trined model to be saved.
 
         Returns:
-            Saves trained, picked model to MODELS_DIRECTORY.
+            Saves trained, pickled model to MODELS_DIRECTORY.
         """
 
         self.model_best.fit(self.X, self.y)

@@ -43,6 +43,7 @@ class MakePlots(object):
     def __init__(self,
                  modeling_data_filename='modeling_data.csv',
                  saved_model_filename='AdaBoostClassifier.pkl'):
+        # Loads modeling data, creates X and y.
         modeling_data_filepath = os.path.join(SENSITIVE_DATA_DIRECTORY,
                                               modeling_data_filename)
         if os.path.exists(modeling_data_filepath):
@@ -59,7 +60,7 @@ class MakePlots(object):
                   'src/features/survey_join_account_data.py\n')
             sys.exit()
         
-        
+        # Loads saved, pickled model.
         saved_model_filepath = os.path.join(MODELS_DIRECTORY, saved_model_filename)
         if os.path.exists(saved_model_filepath):
             with open(saved_model_filepath, 'rb') as f:
@@ -72,10 +73,23 @@ class MakePlots(object):
                   'src/models/create_models.py\n')
             sys.exit()
 
-
     def get_top_features(self, model, num_features=9):
+        """Gets 'num_features' top features for classifier model.
 
-        self.feat_imp_argsort = np.argsort(list(model.feature_importances_))[::-1]
+        Args:
+            model: Previously trained model.
+            num_features (int): Number of top features to get, in order of
+            feature importance.
+        
+        Returns:
+            top_n_feature_indicies: Numerical indexes for top features.
+            top_n_feature_names: Column names for top features.
+            imp_nums_std: Standardized relative feature importance numbers.
+            feat_imp_argsort: Argsort to get top features from DataFrame.
+        """
+
+        self.feat_imp_argsort = np.argsort(list(model.feature_importances_)
+                                                                       )[::-1]
         print(f"All sorted indicies: {self.feat_imp_argsort}")
 
         unordered_feature_names = self.X.columns.to_list()
@@ -86,44 +100,56 @@ class MakePlots(object):
         self.top_n_feature_names = ordered_feature_names[:num_features]
 
         imp_nums = model.feature_importances_
-        imp_nums_sort = [imp_nums[idx] for idx in self.feat_imp_argsort][:num_features]
+        imp_nums_sort = [imp_nums[idx] for idx in self.feat_imp_argsort][
+                                                                :num_features]
         self.imp_nums_std = (imp_nums_sort / max(imp_nums_sort)) * 100
 
         print(f"\nTop {num_features} features:")
         print(f"Indicies: {self.top_n_feature_indicies}\n")
         pprint(self.top_n_feature_names)
 
-
     def rename_feature_names(self, data_frame):
-        self.custom_feature_names = data_frame.columns.to_list()
-        self.custom_feature_names[0] = 'Age'
-        self.custom_feature_names[35] = 'Record of the Month satisfaction'
-        self.custom_feature_names[90] = 'Must hear album before purchasing'
-        self.custom_feature_names[49] = 'How often Essentials Record of the Month'
-        self.custom_feature_names[109] = 'I do not own or lease a vehicle'
-        self.custom_feature_names[58] = 'Curated playlists for music discovery'
-        self.custom_feature_names[17] = 'Have dedicated vinyl listening room'
-        self.custom_feature_names[36] = 'Add-on subscriptions satisfaction'
-        self.custom_feature_names[60] = 'Know everything about favorite artists'
-        self.custom_feature_names[55] = 'How often Classics listening notes booklet'
-        self.custom_feature_names[2] = 'How many records do you own?'
-        self.custom_feature_names[15] = 'Listen to vinyl more than stream music'
-        self.custom_feature_names[83] = 'I buy everything my favorite artists release'
+        """Creates more readable names for features of interest.
+        
+        Args:
+            data_frame: X DataFrame containing features and data.
+        
+        Returns:
+            pretty_features: DataFrame containing unordered feature names,
+            with select features replaced with more readable ones.
+        """
+
+        self.pretty_features = data_frame.columns.to_list()
+        self.pretty_features[0] = 'Age'
+        self.pretty_features[35] = 'Record of the Month satisfaction'
+        self.pretty_features[90] = 'Must hear album before purchasing'
+        self.pretty_features[49] = 'How often Essentials Record of the Month'
+        self.pretty_features[109] = 'I do not own or lease a vehicle'
+        self.pretty_features[58] = 'Curated playlists for music discovery'
+        self.pretty_features[17] = 'Have dedicated vinyl listening room'
+        self.pretty_features[36] = 'Add-on subscriptions satisfaction'
+        self.pretty_features[60] = 'Know everything about favorite artists'
+        self.pretty_features[55] = 'How often Classics listening notes booklet'
+        self.pretty_features[2] = 'How many records do you own?'
+        self.pretty_features[15] = 'Listen to vinyl more than stream music'
+        self.pretty_features[83] = 'I buy everything my fav artists release'
         print("created custom feature names")
 
-    def make_plots(self, num_features=9):
+    def make_barplot(self, num_features=9):
         # barplot
-        x_bar = [self.custom_feature_names[idx] for idx in self.feat_imp_argsort][:num_features]
+        x_bar = [self.pretty_features[idx] for idx in 
+                                         self.feat_imp_argsort][:num_features]
         fig, ax = plt.subplots(figsize=(12, 6), facecolor='white')
         plt.barh(x_bar, self.imp_nums_std, color='#40FF40')
         plt.xticks(rotation='0', fontsize=18)
-        plt.yticks(fontsize=18)
-        ax.legend(['Relative Importance'], fontsize=22)
+        plt.yticks(fontsize=22)
+        # ax.legend(['Relative Importance'], fontsize=22, loc='lower right')
         # ax.set_facecolor('whitesmoke')
+        plt.xlabel('Relative Importance', fontsize=22)
         ax.invert_yaxis()
         plt.tight_layout(pad=1.08, h_pad=None, w_pad=None, rect=None)
         save_image_path = os.path.join(ROOT_IMGS_DIRECTORY,
-                                              'charts/barplot')
+                                              'charts/barplot.png')
         plt.savefig(save_image_path, dpi=None, facecolor='w', edgecolor='w',
             orientation='portrait', papertype=None, format=None,
             transparent=False, bbox_inches=None, pad_inches=0.1,
@@ -131,15 +157,37 @@ class MakePlots(object):
         print(f"barplot saved to {save_image_path}.")
         plt.show()
 
-
+    def make_pdp_single(self, feat_idx_lst=[0]):
         print(f"Creating partial_dependence_pair plot.")
         fig, ax = plt.subplots(figsize=(12, 6), facecolor='white')
         plt.title("Top Features Partial Dependence Plots", fontsize='large')
         ax.set_facecolor('whitesmoke')
         plot_partial_dependence(self.model,
                                 self.X,
-                                [0, 35],
-                                feature_names=self.custom_feature_names,
+                                feat_idx_lst,
+                                feature_names=self.pretty_features,
+                                fig=fig,
+                                line_kw={'c': '#40FF40', 'linewidth': 10},
+                                n_jobs=-1)
+        plt.tight_layout(pad=1.08, h_pad=None, w_pad=None, rect=None)
+        save_image_path = os.path.join(ROOT_IMGS_DIRECTORY,
+                                            'charts/partial_dependence_single')
+        plt.savefig(save_image_path, dpi=None, facecolor='w', edgecolor='w',
+            orientation='portrait', papertype=None, format=None,
+            transparent=False, bbox_inches=None, pad_inches=0.1,
+            frameon=None, metadata=None)
+        print(f"barpartial_dependence_single plot saved to {save_image_path}.")
+        plt.show()
+
+    def make_pdp_pair(self, feat_idx_lst=[0, 35]):
+        print(f"Creating partial_dependence_pair plot.")
+        fig, ax = plt.subplots(figsize=(12, 6), facecolor='white')
+        plt.title("Top Features Partial Dependence Plots", fontsize='large')
+        ax.set_facecolor('whitesmoke')
+        plot_partial_dependence(self.model,
+                                self.X,
+                                feat_idx_lst,
+                                feature_names=self.pretty_features,
                                 fig=fig,
                                 line_kw={'c': '#40FF40', 'linewidth': 10},
                                 n_jobs=-1)
@@ -154,13 +202,14 @@ class MakePlots(object):
         plt.show()
 
 
+    def make_pdp_all(self):
         # Partial Dependence Plots
         print(f"Creating partial_dependence_all plot. This will take a moment.")
         fig, ax = plt.subplots(figsize=(16, 12), facecolor='white')
         plot_partial_dependence(self.model,
                                 self.X,
                                 self.top_n_feature_indicies,
-                                feature_names=self.custom_feature_names,
+                                feature_names=self.pretty_features,
                                 fig=fig,
                                 line_kw={'c': '#40FF40', 'linewidth': 8},
                                 n_jobs=-1)
@@ -177,7 +226,10 @@ class MakePlots(object):
 
 if __name__ == '__main__':
     make_plots = MakePlots()
-    make_plots.get_top_features(make_plots.model, num_features=9)
+    make_plots.get_top_features(make_plots.model, num_features=5)
     make_plots.rename_feature_names(make_plots.X)
-    make_plots.make_plots()
 
+    make_plots.make_barplot(num_features=5)
+    # make_plots.make_pdp_single(feat_idx_lst=[0])
+    make_plots.make_pdp_pair(feat_idx_lst=[0, 35])
+    # make_plots.make_pdp_all()
