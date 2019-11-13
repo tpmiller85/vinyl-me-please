@@ -15,7 +15,7 @@ SENSITIVE_DATA_DIRECTORY = os.path.join(ROOT_DIRECTORY, '../SENSITIVE')
 class SurveyJoinAccountData(object):
     """
     Vinyl Me, Please survey and customer data processing class.
-    
+
     Loads featurized survey data from .csv, subsets DataFrame to extract
     data to be used for model building, and adds target data (subscription
     status) from production PostgreSQL database by joining on customer email
@@ -35,9 +35,10 @@ class SurveyJoinAccountData(object):
 
 
     def __init__(self, featurized_df_filename='featurized_survey_data.csv'):
-        """Load featurized data from SENSITIVE_DATA_DIRECTORY. Raise error
-        if featurized data can't be found.
-        
+        """Loads featurized data from SENSITIVE_DATA_DIRECTORY.
+
+        Raises error if featurized data can't be found.
+
         Returns:
             df - DataFrame containing customer survey data.
         """
@@ -56,8 +57,13 @@ class SurveyJoinAccountData(object):
                   'src/features/build_survey_features.py\n')
             sys.exit()
 
-        """Runs PostgreSQL query on Vinyl Me, Please production database via
-        Psycopg2. Adds target data to featurized survey data."""
+        """Sets up PostgreSQL query.
+
+        Query to be run on Vinyl Me, Please production database via Psycopg2
+        by later function. Retrieves target data for modeling. Excludes
+        customer accounts created within one month of when the data was
+        collected. (Ends 2019-10-01 - DB dump 2019-11-02.)
+        """
 
         self.conn = psycopg2.connect(database="vinyl", user="postgres",
                                      host="localhost", port="5435")
@@ -75,10 +81,10 @@ class SurveyJoinAccountData(object):
 
     def subset_noobs(self, source_df):
         """Creates subsetted DataFrame with customers new to vinyl.
-        
+
         Subsets featurized survey data to only include vinyl 'noobs', which are
         customers who answered the following question with the below answers:
-        
+
         How long have you been buying records?
             - I just started
             - 6 - 12 months
@@ -128,20 +134,32 @@ class SurveyJoinAccountData(object):
                 Do you own/lease a vehicle? - Original survey column 16
         """
 
+        # Creating dummy columns
         dummy_df_where_live = pd.get_dummies(self.df_model.iloc[:, 2],
-                                      prefix='Where do you live?',
-                                      prefix_sep='_')
+                                             prefix='Where do you live?',
+                                             prefix_sep='_')
         dummy_df_house = pd.get_dummies(self.df_model.iloc[:, 3],
-                                      prefix='What is your living arrangement?',
-                                      prefix_sep='_')
+                                     prefix='What is your living arrangement?',
+                                     prefix_sep='_')
         dummy_df_car = pd.get_dummies(self.df_model.iloc[:, 4],
                                       prefix='Do you own/lease a vehicle?',
                                       prefix_sep='_')
 
-        self.df_model = pd.concat([self.df_model, (dummy_df_where_live * 3)], axis=1)
-        self.df_model = pd.concat([self.df_model, (dummy_df_house * 3)], axis=1)
-        self.df_model = pd.concat([self.df_model, (dummy_df_car * 3)], axis=1)
-        self.df_model.drop(self.df_model.columns[[2, 3, 4]], axis=1, inplace=True)
+        # Adding dummy columns to original DataFrame
+        self.df_model = pd.concat([self.df_model,
+                                  (dummy_df_where_live * 3)],
+                                   axis=1)
+        self.df_model = pd.concat([self.df_model,
+                                  (dummy_df_house * 3)],
+                                   axis=1)
+        self.df_model = pd.concat([self.df_model,
+                                  (dummy_df_car * 3)],
+                                   axis=1)
+
+        # Dropping original columns
+        self.df_model.drop(self.df_model.columns[[2, 3, 4]],
+                           axis=1,
+                           inplace=True)
 
     def query_customer_status(self):
         """Runs PostgreSQL query defined in class __init__ method.
@@ -165,7 +183,7 @@ class SurveyJoinAccountData(object):
                 with customer email address in the first column.
             target_data - DataFrame containing target data ($, acct status),
                 with customer email address in the first column.
-        
+
         Returns:
             df_merged - Combined DataFrame.
         """
@@ -212,7 +230,7 @@ class SurveyJoinAccountData(object):
 
     def save_to_csv(self, data_frame, file_name='modeling_data.csv'):
         """Saves DataFrame to .csv.
-        
+
         Saves .csv to SENSITIVE_DATA_DIRECTORY, which must be located outside
         of any git repo due to risk of PII.
 

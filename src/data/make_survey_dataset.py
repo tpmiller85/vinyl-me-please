@@ -22,11 +22,12 @@ def load_data_as_dataframe(filename='2019 Member Survey - Raw Data.csv'):
     Returns:
         df: survey data as pandas DataFrame, with two-level MultiIndex.
         df_col_names: pandas DataFrame with column names for ease of use.
-    """ 
+    """
 
     filepath = os.path.join(SENSITIVE_DATA_DIRECTORY, filename)
     df = pd.read_csv(filepath,
-                            header=[0,1],
-                            low_memory=False)
+                     header=[0,1],
+                     low_memory=False)
     df_col_names = pd.DataFrame(df.columns.to_numpy().reshape([-1, 1]))
     return df, df_col_names
+    
