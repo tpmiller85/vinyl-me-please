@@ -25,46 +25,45 @@ In their own words, Denver-based **Vinyl Me, Please.** is *"a record of the mont
 <a name="#data_goals"></a>
 
 ## Data & Goals
-The data for this project came from two sources: the main Vinyl Me, Please **Production/Sales PostgreSQL** Database, and the response data from a large **customer survey**, which was available in .csv format.
+The data for this project came from two sources: the main Vinyl Me, Please **Production/Sales PostgreSQL** Database, and the response data from a large **customer survey**, which was available in **.csv** format.
 
-For this project my main focus was on the customer survey data, since not much work had been done yet with this data set. The goal was to utilize customer-level data from the production database such as total lifetime revenue and account status (active/canceled) and to merge it with the survey response data in order to produce new insights.
+For this project, my main focus was on the **customer survey data**, since not much work had been done yet with this data set. The goal was to utilize customer-level data from the production database such as total lifetime revenue and account status (active/canceled), and to merge it with the survey response data in order to produce new insights.
 
 <a name="#data_pipeline"></a>
 
 ## Data Pipeline  
-The **PostgreSQL database** dump was restored into a PostgreSQL database running in a **Docker container on my local system**. From there, I established a pipeline to **Python** using **psycopg 2**. The .csv survey data was read directly into a Python environment using pandas, and the two data sources were able to be joined using the customer email address. Since they surveys were originally sent out using the customer account email, all of the email addresses matched.
+I restored the PostgreSQL database dump I was given access to into a **PostgreSQL database** running in a **Docker container on my local system**. From there, I established a pipeline to **Python** using **Psycopg 2**. The **.csv survey data** was read directly into a Python environment using **pandas**, and the two data sources were able to be joined using the customer email address as a key. Since they surveys were originally sent out using the customer account email, all of the email addresses matched up.
 
 Throughout the project, all data was saved outside of this git repo in order to protect any **Personally Identifiable Information (PII)** contained in the data.
 
 <a name="#eda"></a>
 
 ## Exploratory Data Analysis (EDA)
-The customer survey included over 120 questions, and was filled out by approx. 62,00 customers. The responses were a mix of the following types:
+The customer survey included over **120 questions**, and was filled out by approx. **6,200 customers**. The responses were a mix of the following types:
 * Numerical
 * Multiple-Choice
 * Free-form text answers
 
 For multiple choice questions, each possible selection was encoded as a new column, so the resulting data set was approx. 6200 rows x 450 columns.
 
-My initial findings (using some of the methods described below) showed tht the **most valuable customers for Vinyl Me, Please are long-time vinyl buyers**, who have been buying vinyl for 15+ years. While this is good to know, this is also a fairly limited market, so my focus shifted to answering the following:
+My initial findings (using some of the methods described below) showed tht the **most valuable customers for Vinyl Me, Please are long-time vinyl buyers**, who have been buying vinyl for 15+ years. While this is good to know, this is also a fairly limited market, so my focus shifted to answering the following questions:
 
-* ### How does Vinyl Me, Please:
-  * ### attract NEW vinyl buyers, and then
-  * ### retain them as subscribers?
+* ### How does Vinyl Me, Please **attract** NEW vinyl buyers (*vinyl noobs*)?
+* ### How does Vinyl Me, Please **retain** *vinyl noobs* as subscribers?
 
-I was able to look at just *vinyl noobs* by subsetting the survey responses. I selected all users whp reported that they had been buying vinyl records for 0 - 3 years, which reduced the responses from 6,200 customers to 2,100 customers.
+I was able to look at just *vinyl noobs* by subsetting the survey responses. I selected all users whp reported that they had been **buying vinyl records for 0 - 3 years**, which reduced the responses from 6,200 customers to 2,100 customers.
 
 <a name="#attract"></a>
 
 ## How Does VMP Attract *Vinyl Noobs*? - Natural Language Processing
-A good proxy for how to attract people who are new to vinyl was to see how *vinyl noobs* answered the survey question: "Why did you start buying vinyl originally?". Since these were free-form text responses, I built a class ([survey_nlp.py](src/models/survey_nlp.py)) that performed four different types of Natural Language Processing in order to find the main topics that were covered in the responses. I implemented the following algorithms:
+A good proxy for how to attract people who are new to vinyl was to see how *vinyl noobs* answered the survey question: **"Why did you start buying vinyl originally?"**. Since these were free-form text responses, I built a class ([survey_nlp.py](src/models/survey_nlp.py)) that performed four different types of **Natural Language Processing** (NLP) in order to find the main topics that were covered in the responses. I implemented and compared the following algorithms:
 
 * SKLearn LDA ([Wikipedia](https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation)/[SKLearn](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.LatentDirichletAllocation.html))
 * SKLearn NMF([Wikipedia](https://en.wikipedia.org/wiki/Non-negative_matrix_factorization)/[SKLearn NMF](https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.NMF.html))
 * Gensim LDA ([Wikipedia](https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation)/[Gensim](https://radimrehurek.com/gensim/models/ldamodel.html))
 * Mallet LDA using Gensim wrapper ([Wikipedia](https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation)/[Gensim](https://radimrehurek.com/gensim/models/wrappers/ldamallet.html)/[Mallet homepage](http://mallet.cs.umass.edu))
 
-In the end, the SKLearn LDA algorithm seemed to provide the clearest topics for this data set. 
+In the end, the **SKLearn LDA** algorithm seemed to provide the clearest topics for this data set.
 
 <a name="#lda"></a>
 
@@ -75,19 +74,19 @@ In the end, the SKLearn LDA algorithm seemed to provide the clearest topics for 
 | Topic 1: Gifts | player, **record player**, record, got, **gift**, turntable, got record, **got record player**, **gifted**, received, **birthday**, way listen, **christmas**, gave, given |
 | Topic 2: Nostalgic Hipsters | 2017, wanted support, **wanted support artists**, support artists, downhill, display, christmas, huge, felt, **childhood**, **beautiful**, **form music**, turntable christmas, **memories**, **passionate** |
 
-Some clear topics emerged from the analysis. I've only listed the top two topics that resulted from running the model with a total of five topics. The biggest takeaway here might be that a gift set/promotion that includes a relatively inexpensive record player and a subscription might be an excellent way to get new people involved in vinyl.
+Some clear topics emerged from the analysis. I've only listed the top two topics that resulted from running the model with a total of five topics. The biggest takeaway here might be that a gift pack or similar that includes a relatively inexpensive record player and a subscription might be an excellent way to get new people involved in vinyl.
 
 <a name="#retain"></a>
 
 ## How Does VMP Retain *Vinyl Noobs*?
-To answer this question, I numerically encoded 113 of the numerical and multiple-choice columns of survey responses in order to build a model. I built 10 different methods in the [build_survey_features.py](src/features/build_survey_features.py) script, which were then run on different sets of columns. Once this was complete, the customer account status (active/canceled) was added in from the PostgreSQL database using the [survey_join_account_data.py](src/features/survey_join_account_data.py) script.
+To answer this question, I **encoded 113 of the numerical and multiple-choice columns** of survey responses in order to build a model. I built 10 different methods in the [build_survey_features.py](src/features/build_survey_features.py) script, which were then run on different sets of columns. Once this was complete, the **customer account status** (active/canceled) was added in from the PostgreSQL database using the [survey_join_account_data.py](src/features/survey_join_account_data.py) script.
 
 <a name="#model_selection"></a>
 
 ### Model Selection
-Since the goal was to predict the customer account status (Active/Canceled) using a large number of features (113 columns), I focused on decision tree classifier models. Specifically, I implemented GradientBoostingClassifier and AdaBoostClassifier models in the [create_models.py](src/models/create_models.py) class. This class takes the feature-engineered data, makes a train/test split, performs a grid search, pickles and then saves the chosen model.
+Since the goal was to predict the customer account status (Active/Canceled) using a large number of features (113 columns), I focused on **decision tree classifier models**. Specifically, I implemented GradientBoostingClassifier and AdaBoostClassifier models in the [create_models.py](src/models/create_models.py) class. This class takes the feature-engineered data, makes a train/test split, performs a grid search, pickles and then saves the chosen model.
 
-In the end, the AdaBoostClassifier model was slightly more accurate, and also significantly faster to train (in part due to the fact that there are fewer parameters to search).
+In the end, the **AdaBoostClassifier** model was slightly more accurate, and also significantly faster to train (in part due to the fact that there are fewer parameters to search).
 
 <a name="#adaboost"></a>
 
