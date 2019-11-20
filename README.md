@@ -94,10 +94,13 @@ In the end, the **AdaBoostClassifier** model was slightly more accurate, and als
 I built the model with a binary prediciton target, with `0` being customer retention (account status `active`) and `1` being customer churn (account status `canceled`).
 
 AdaBoostClassifier model provides us with the relative [feature importances](https://scikit-learn.org/stable/auto_examples/ensemble/plot_forest_importances.html) for its model, which should correspond to the things that can most closely predict if a customer will churn.
+
 ![](images/charts/adaboost_top_features.jpg)
 
 However, the feature importances do not tell us what effect those predictors are actually having on the model. In order to see this, we can examine [partial dependence plots](https://scikit-learn.org/stable/modules/partial_dependence.html). 
+
 ![](images/charts/partial_dependence_plots.jpg)
+
 Since in this case `1` (or up) means customer churn, these partial dependence plots for the most important two features show that customers under the age of 30 have an increased risk of churn, as well as customers who are dissatisfied with the Record Of The Month.
 
 <a name="#concl"></a>
@@ -106,3 +109,5 @@ Since in this case `1` (or up) means customer churn, these partial dependence pl
 All of the code tools for this project were built to they could be easily adapted to provide new insights. The Natural Language Processing pipeline, [survey_nlp.py](src/models/survey_nlp.py), can be run on any of the free-form answer questions, using either the full population, or just *vinyl noobs*. 
 
 The decision tree classifier pipeline could also easily be adapted to analyze the full survey response data set as opposed to just the *vinyl noobs*, and different questions could easily be added to or removed from the model.
+
+![](images/pics/closing_image.jpg)
